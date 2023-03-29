@@ -1,0 +1,326 @@
+# basic:
+#   url: ssl://emqx.rexense.com:8883
+#   username: rexense
+#   password: rexense
+functionality:
+  gateway:
+    topo_join:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/topo/join
+        payload:
+          id: ${IOTA}
+          productKey: ${devPK}
+          deviceName: ${devDN}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/topo/join_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+          data:
+            - productKey: ${devPK}
+              deviceName: ${devDN}
+    topo_leave:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/topo/leave
+        payload:
+          id: ${IOTA}
+          params:
+            - productKey: ${devPK}
+              deviceName: ${devDN}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/topo/leave_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+          data:
+            - productKey: ${devPK}
+              deviceName: ${devDN}
+    topo_add:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/topo/add
+        payload:
+          id: ${ID}
+          params:
+            - productKey: ${devPK}
+              deviceName: ${devDN}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/topo/add_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    topo_delete:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/topo/delete
+        payload:
+          id: ${ID}
+          params:
+            - productKey: ${devPK}
+              deviceName: ${devDN}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/topo/delete_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+          data:
+            - productKey: ${devPK}
+              deviceName: ${devDN}
+    topo_get:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/topo/get
+        payload:
+          id: ${ID}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/topo/get_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+          data:
+            - productKey: ${devPK}
+              deviceName: ${devDN}
+    gw_login:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/login
+        payload:
+          id: ${IOTA}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/login_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    gw_logout:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/logout
+        payload:
+          id: ${IOTA}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/logout_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    create_zigbee_network:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/service/create_zigbee_network
+        payload: 
+          id: ${ID}
+          params:
+            - key: ${param_name}
+              value: ${param_value}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/service/create_zigbee_network_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    leave_zigbee_network:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/service/leave_zigbee_network
+        payload:
+          id: ${ID}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/service/leave_zigbee_network_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    start_permit_join:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/service/start_permit_join
+        payload:
+          id: ${ID}
+          params:
+            - key: ${param_name}
+              value: ${param_value}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/service/start_permit_join_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    create_scene:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/service/scene_create_update
+        payload:
+          id: ${ID}
+          params:
+            - key: ${param_name}
+              value: ${param_value}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/service/scene_create_update_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    delete_scene:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/service/scene_delete
+        payload:
+          id: ${ID}
+          params:
+            - key: ${param_name}
+              value: ${param_value}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/service/scene_delete_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    trigger_scene:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/service/scene_trigger
+        payload:
+          id: ${ID}
+          params:
+            - key: ${param_name}
+              value: ${param_value}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/service/scene_trigger_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    enable_scene:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/service/scene_enable
+        payload:
+          id: ${ID}
+          params:
+            - key: ${param_name}
+              value: ${param_value}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/service/scene_enable_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    disable_scene:
+      request:
+        topic: rex/${gwPK}/${gwDN}/thing/service/scene_disable
+        payload:
+          id: ${ID}
+          params:
+            - key: ${param_name}
+              value: ${param_value}
+      response:
+        topic: rex/${gwPK}/${gwDN}/thing/service/scene_disable_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    report_version:
+      request:
+        topic: rex/${gwPK}/${gwDN}/ota/device/inform
+        payload:
+          id: ${IOTA}
+          params:
+            - module: ${module_name}
+              version: ${version_str}
+    ota_request:
+      request:
+        topic: rex/${gwPK}/${gwDN}/ota/device/upgrade
+        payload:
+          id: ${ID}
+          url: ${URL}
+    ota_progress:
+      request:
+        topic: rex/${gwPK}/${gwDN}/ota/device/progress
+        payload:
+          id: ${ID}
+          step: ${OTA_STEP}
+          desc: ${OTA_DESC}
+  device:
+    dev_login:
+      request:
+        topic: rex/${gwPK}/${gwDN}/sub/login
+        payload:
+          id: ${IOTA}
+          productKey: ${devPK}
+          deviceName: ${devDN}
+      response:
+        topic: rex/${gwPK}/${gwDN}/sub/login_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    dev_logout:
+      request:
+        topic: rex/${gwPK}/${gwDN}/sub/logout
+        payload:
+          id: ${IOTA}
+          params:
+            - productKey: ${devPK}
+              deviceName: ${devDN}
+      response:
+        topic: rex/${gwPK}/${gwDN}/sub/logout_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    dev_property_post:
+      request:
+        topic: rex/${devPK}/${devDN}/thing/event/property/post
+        payload:
+          id: ${IOTA}
+          params:
+            - name: ${property_name}
+              value: ${property_value}
+              time: ${TIMESTAMP}
+      response:
+        topic: rex/${devPK}/${devDN}/thing/event/property/post_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    dev_property_set:
+      request:
+        topic: rex/${devPK}/${devDN}/thing/service/property/set
+        payload:
+          id: ${ID}
+          params:
+            - name: ${property_name}
+              value: ${property_value}
+      response:
+        topic: rex/${devPK}/${devDN}/thing/service/property/set_reply
+        payload:
+          id: ${ID}
+          code: ${CODE}
+    dev_event_post:
+      - request:
+          topic: rex/${devPK}/${devDN}/thing/event/${event_name}/post
+          payload:
+            id: ${IOTA}
+            params: ${params}
+            time: ${TIMESTAMP}
+        response:
+          topic: rex/${devPK}/${devDN}/thing/event/${event_name}/post_reply
+          payload:
+            id: ${ID}
+            code: ${CODE}
+        match: ["id"]
+        success:
+          CODE: 0
+    dev_service_call:
+      - request:
+          topic: rex/${devPK}/${devDN}/thing/service/${service_name}
+          payload:
+            id: ${ID}
+            params:
+              - key: ${param_name}
+                value: ${param_value}
+        response:
+          topic: rex/${devPK}/${devDN}/thing/service/${service_name}_reply
+          payload:
+            id: ${ID}
+            code: ${CODE}
+    dev_set_alias:
+      request:
+        topic: rex/${devPK}/${devDN}/thing/service/alias/set
+        payload:
+          id: ${ID}
+          alias: ${alias}
+      response:
+        topic: rex/${devPK}/${devDN}/thing/service/alias/set_reply
+        payload:
+          id: ${ID}
+          alias: ${CODE}
+    dev_ota_request:
+      request:
+        topic: rex/${devPK}/${devDN}/ota/device/upgrade
+        payload:
+          id: ${ID}
+          url: ${URL}
+    dev_ota_progress:
+      request:
+        topic: rex/${devPK}/${devDN}/ota/device/progress
+        payload:
+          id: ${ID}
+          step: ${OTA_STEP}
+          desc: ${OTA_DESC}
