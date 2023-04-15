@@ -1,7 +1,8 @@
-# basic:
-#   url: ssl://emqx.rexense.com:8883
-#   username: rexense
-#   password: rexense
+deviceId: mqtt-plugin-001
+basic:
+   url: ssl://emqx.rexense.com:8883
+   username: rexense
+   password: rexense
 functionality:
   gateway:
     topo_join:

@@ -13,7 +13,10 @@ yarn-error.log*
 *.ntvs*
 *.njsproj
 *.sln
-
+_bin_mipsle/
+_bin_x86_64/
+_int_mipsle/
+_int_x86_64/
 
 #mycjh
 yarn.lock
