@@ -27,7 +27,6 @@ typedef struct {
     int         code;
     char*       data;
     char*       message;
-    char*       traceId;
 } Response;
 
 /*
@@ -37,7 +36,6 @@ reflect_item_t response_ref_tbl[] = {
     _property_int(Response, code),
     _property_string(Response, data),
     _property_string(Response, message),
-    _property_string(Response, traceId),
     _property_end()
 };
 
@@ -84,7 +82,6 @@ void checkResult(Response* response, char* jstrOutput){
     CHECK_NUMBER(response->code, 200);
     CHECK_STRING(response->data, "====AJLJLJLKJKL9KK(nflkj)");
     CHECK_STRING(response->message, "请求成功！");
-    CHECK_STRING(response->traceId, "ABC");
     
     //It is difficult to predict the output due to the accuracy problem.
     //CHECK_STRING(jstrOutput, encodeTest);

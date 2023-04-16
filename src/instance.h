@@ -38,8 +38,9 @@ struct Instance {
     RexPluginInfo_t      info;
     void                *context;
     char                 clientId[32];
+    char                 modelCode[32];
     char                 vendorCode[32];
-    char                 model[32];
+    char                 hexModelId[32];
     char                 productKey[32];
     char                 productSecret[40];
     char                 deviceName[32];
