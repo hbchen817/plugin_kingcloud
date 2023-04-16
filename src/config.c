@@ -376,7 +376,7 @@ static struct dp_conf_node *conf_get_node_or_create(struct dp_conf_node *node, c
 
         key = next;
         parent = node;
-    } while (next != '\0');
+    } while (*next != '\0');
 
     return node;
 }
