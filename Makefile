@@ -72,7 +72,7 @@ $(BIN_DIR)/test_config: test/test_config.c src/config.c
 $(BIN_DIR)/test_aes: test/test_aes.c src/aes.c
 	@set -e; echo $@; $(CC) $(CFLAGS_TEST) -Icontrib/libyaml/ -Icontrib/cJSON/ -Iinc/ -Isrc/ $^ -Llib/$(ARCH) -lyaml -lcjson -o $@
 
-$(BIN_DIR)/test_cson: test/test_cson.c test/cson_test1.c test/cson_test2.c src/cson.c src/cjson_impl.c
+$(BIN_DIR)/test_cson: test/test_cson.c test/cson_test1.c test/cson_test2.c test/cson_test3.c src/cson.c src/cjson_impl.c
 	@set -e; echo $@; $(CC) $(CFLAGS_TEST) -Icontrib/libyaml/ -Icontrib/cJSON/ -Iinc/ -Isrc/ $^ -Llib/$(ARCH) -lyaml -lcjson -o $@
 
 $(BIN_DIR)/test_configure: test/test_configure.c src/configuration.c src/rbtree.c src/any.c

@@ -1,6 +1,6 @@
 /**
  * @file   cjson_impl.c
- * @author sun_chb@126.com
+ * @author https://github.com/sunchb/cson
  */
 #include "cJSON.h"
 #include "cson.h"

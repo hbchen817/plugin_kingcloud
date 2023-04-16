@@ -1,6 +1,6 @@
 /**
  * @file   cson.c
- * @author sun_chb@126.com
+ * @author https://github.com/sunchb/cson
  */
 #include "cson.h"
 #include "stdio.h"

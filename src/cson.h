@@ -1,6 +1,6 @@
 /**
  * @file   cson.h
- * @author sun_chb@126.com
+ * @author https://github.com/sunchb/cson
  */
 #ifndef _CSON_H_
 #define _CSON_H_
