@@ -1,6 +1,6 @@
 #include "mqtt_handler.h"
 #include "callbacks.h"
-#include "configuration.h"
+#include "config.h"
 #include "instance.h"
 #include "mqtt.h"
 #include "protocol.h"

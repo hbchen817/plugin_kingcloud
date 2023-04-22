@@ -9,6 +9,30 @@
 #define DP_CONF_NODE_NAME_MAX   1024
 #define DP_CONF_NODE_LEVEL_MAX  128
 
+#define NAME_GW_PRODUCT_KEY        "gwPK"
+#define NAME_GW_DEVICE_NAME        "gwDN"
+#define NAME_DEV_PRODUCT_KEY       "devPK"
+#define NAME_DEV_DEVICE_NAME       "devDN"
+#define NAME_DEV_EVENT_NAME        "event_name"
+#define NAME_DEV_SERVICE_NAME      "service_name"
+#define NAME_DEV_ALIAS             "alias"
+#define NAME_COMMON_CODE           "CODE"
+#define NAME_COMMON_PROPERTY_NAME  "property_name"
+#define NAME_COMMON_PROPERTY_VALUE "property_value"
+#define NAME_COMMON_PARAM_NAME     "param_name"
+#define NAME_COMMON_PARAM_VALUE    "param_value"
+#define NAME_COMMON_PARAMS         "params"
+#define NAME_COMMON_KEY            "key"
+#define NAME_COMMON_VALUE          "value"
+#define NAME_COMMON_MODULE_NAME    "module_name"
+#define NAME_COMMON_VERSION_STR    "version_str"
+#define NAME_COMMON_OTA_URL        "URL"
+#define NAME_COMMON_OTA_ID         "OTA_ID"
+#define NAME_COMMON_OTA_STEP       "OTA_STEP"
+#define NAME_COMMON_OTA_DESC       "OTA_DESC"
+#define NAME_FUNC_TIMESTAMP        "TIMESTAMP"
+#define NAME_FUNC_IOTA             "IOTA"
+
 enum dp_conf_value_type {
     DP_CONF_VALUE_TYPE_NONE,
     DP_CONF_VALUE_TYPE_SCALAR,

@@ -7,6 +7,8 @@
 #include "tsl_model.h"
 #include <stdatomic.h>
 #include <threads.h>
+#include "any.h"
+#include "callbacks.h"
 
 
 #define SYS_INTERFACE_NAME "eth0.2"
@@ -50,6 +52,10 @@ struct Instance {
     char                 mqttBroker[256];
     char                 mqttUsername[32];
     char                 mqttPassword[32];
+    char                 messageUpTopic[128];
+    char                 commandDownTopic[128];
+    char                 commandAckTopic[128];
+    char                 otaAckTopic[128];
     struct DeviceList    devList;
     atomic_int           sequence;
     struct MqttInstance *mqtt;

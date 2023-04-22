@@ -155,21 +155,23 @@ static int do_mqtt_start(struct MqttInstance *mqtt) {
     }
     MQTTAsync_willOptions    willOptions = MQTTAsync_willOptions_initializer;
     MQTTAsync_connectOptions options     = MQTTAsync_connectOptions_initializer_;
-    config_func_t           *config      = &g_config.gw_logout;
-    any_t                    topic_value = {.type = kUnknown};
-    char                     payload_str[256];
-    if (config->enable && config->req_topic != NULL) {
-        any_t topic_pattern = {.type = kUnknown};
-        any_set_const_string(&topic_pattern, config->req_topic);
-        topic_value = generate_value(topic_pattern, NULL);
-        if (any_is_string(&topic_value)) {
-            if (format_from_context(payload_str, sizeof(payload_str), config->req_payload, NULL) >= 0) {
-                willOptions.topicName = topic_value.u.sval;
-                willOptions.message   = payload_str;
-                options.will          = &willOptions;
-            }
-        }
-    }
+
+    // TODO: 网关登出通知
+    // config_func_t           *config      = &g_config.gw_logout;
+    // any_t                    topic_value = {.type = kUnknown};
+    // char                     payload_str[256];
+    // if (config->enable && config->req_topic != NULL) {
+    //     any_t topic_pattern = {.type = kUnknown};
+    //     any_set_const_string(&topic_pattern, config->req_topic);
+    //     topic_value = generate_value(topic_pattern, NULL);
+    //     if (any_is_string(&topic_value)) {
+    //         if (format_from_context(payload_str, sizeof(payload_str), config->req_payload, NULL) >= 0) {
+    //             willOptions.topicName = topic_value.u.sval;
+    //             willOptions.message   = payload_str;
+    //             options.will          = &willOptions;
+    //         }
+    //     }
+    // }
     MQTTAsync_SSLOptions ssl_opts = MQTTAsync_SSLOptions_initializer;
     options.username              = mqtt->username;
     options.password              = mqtt->password;
@@ -187,7 +189,7 @@ static int do_mqtt_start(struct MqttInstance *mqtt) {
     } else {
         mqtt->connecting = true;
     }
-    any_free(&topic_value);
+    // any_free(&topic_value);
     return rc;
 }
 
