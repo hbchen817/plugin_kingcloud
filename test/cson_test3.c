@@ -27,6 +27,7 @@ typedef struct {
     int         code;
     char*       data;
     char*       message;
+    char*       test;
 } Response;
 
 /*
@@ -36,6 +37,7 @@ reflect_item_t response_ref_tbl[] = {
     _property_int(Response, code),
     _property_string(Response, data),
     _property_string(Response, message),
+    _property_string(Response, test),
     _property_end()
 };
 

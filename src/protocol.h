@@ -283,6 +283,220 @@ reflect_item_t msg_heartbeat_ref[] = {
 
 /*******************************END: 心跳报文********************************/
 
+/*******************************BEGIN: 开启组网报文********************************/
+typedef struct {
+    // 开启组网时长
+    char*       join_second;
+    // 组网方式
+    char*       join_type;
+} start_join_value;
+
+reflect_item_t start_join_value_ref[] = {
+    _property_string(start_join_value, join_second),
+    _property_string(start_join_value, join_type),
+    _property_end()
+};
+
+typedef struct {
+    char*               model;
+    char*               parentDeviceId;
+    char*               deviceId;
+    char*               code;
+    start_join_value*   value;
+} start_join_data;
+
+reflect_item_t start_join_data_ref[] = {
+    _property_string(start_join_data, model),
+    _property_string(start_join_data, parentDeviceId),
+    _property_string(start_join_data, deviceId),
+    _property_string(start_join_data, code),
+    _property_obj(start_join_data, value, start_join_value_ref),
+    _property_end()
+};
+
+typedef struct {
+    char*                       version;
+    char*                       flowDirection;
+    char*                       controlType;
+    char*                       messageType;
+    char*                       vendor;
+    char*                       timestamp;
+    char*                       sequence;
+    size_t                      dataNum;   
+    start_join_data*            data;    
+} start_join;
+
+reflect_item_t start_join_ref[] = {
+    _property_string(start_join, version),
+    _property_string(start_join, flowDirection),
+    _property_string(start_join, controlType),
+    _property_string(start_join, messageType),
+    _property_string(start_join, vendor),
+    _property_string(start_join, timestamp),
+    _property_string(start_join, sequence),
+    _property_int_ex(start_join, dataNum, _ex_args_all),
+    _property_array_object(start_join, data, start_join_data_ref, 
+                            start_join_data, dataNum),
+    _property_end()
+};
+
+/*******************************END**********************************************/
+
+/*******************************BEGIN: 停止组网报文********************************/
+typedef struct {
+    char*               model;
+    char*               parentDeviceId;
+    char*               deviceId;
+    char*               code;
+} stop_join_data;
+
+reflect_item_t stop_join_data_ref[] = {
+    _property_string(stop_join_data, model),
+    _property_string(stop_join_data, parentDeviceId),
+    _property_string(stop_join_data, deviceId),
+    _property_string(stop_join_data, code),
+    _property_end()
+};
+
+typedef struct {
+    char*                       version;
+    char*                       flowDirection;
+    char*                       controlType;
+    char*                       messageType;
+    char*                       vendor;
+    char*                       timestamp;
+    char*                       sequence;
+    size_t                      dataNum;   
+    stop_join_data*            data;    
+} stop_join;
+
+reflect_item_t stop_join_ref[] = {
+    _property_string(stop_join, version),
+    _property_string(stop_join, flowDirection),
+    _property_string(stop_join, controlType),
+    _property_string(stop_join, messageType),
+    _property_string(stop_join, vendor),
+    _property_string(stop_join, timestamp),
+    _property_string(stop_join, sequence),
+    _property_int_ex(stop_join, dataNum, _ex_args_all),
+    _property_array_object(stop_join, data, stop_join_data_ref, 
+                            stop_join_data, dataNum),
+    _property_end()
+};
+
+/*******************************END**********************************************/
+
+/*******************************BEGIN: 局域网扫描入网报文********************************/
+typedef struct {
+    // ⼦设备模型编码
+    char*       join_model;
+} scan_join_value;
+
+reflect_item_t scan_join_value_ref[] = {
+    _property_string(scan_join_value, join_model),
+    _property_end()
+};
+
+typedef struct {
+    char*               model;
+    char*               parentDeviceId;
+    char*               deviceId;
+    char*               code;
+    scan_join_value*   value;
+} scan_join_data;
+
+reflect_item_t scan_join_data_ref[] = {
+    _property_string(scan_join_data, model),
+    _property_string(scan_join_data, parentDeviceId),
+    _property_string(scan_join_data, deviceId),
+    _property_string(scan_join_data, code),
+    _property_obj(scan_join_data, value, scan_join_value_ref),
+    _property_end()
+};
+
+typedef struct {
+    char*                       version;
+    char*                       flowDirection;
+    char*                       controlType;
+    char*                       messageType;
+    char*                       vendor;
+    char*                       timestamp;
+    char*                       sequence;
+    size_t                      dataNum;   
+    scan_join_data*            data;    
+} scan_join;
+
+reflect_item_t scan_join_ref[] = {
+    _property_string(scan_join, version),
+    _property_string(scan_join, flowDirection),
+    _property_string(scan_join, controlType),
+    _property_string(scan_join, messageType),
+    _property_string(scan_join, vendor),
+    _property_string(scan_join, timestamp),
+    _property_string(scan_join, sequence),
+    _property_int_ex(scan_join, dataNum, _ex_args_all),
+    _property_array_object(scan_join, data, scan_join_data_ref, 
+                            scan_join_data, dataNum),
+    _property_end()
+};
+
+/*******************************END**********************************************/
+
+/*******************************BEGIN: 获取子设备列表报文********************************/
+typedef struct {
+    char*               model;
+    char*               parentDeviceId;
+    char*               deviceId;
+    char*               code;
+} child_list_req_data;
+
+typedef struct {
+    char*       model;
+    char*       room;
+    char*       name;
+    char*       parentDeviceId;
+    char*       deviceId;
+    char*       code;
+    char*       value;
+} child_list_rsp_data;
+
+reflect_item_t scan_join_data_ref[] = {
+    _property_string(scan_join_data, model),
+    _property_string(scan_join_data, parentDeviceId),
+    _property_string(scan_join_data, deviceId),
+    _property_string(scan_join_data, code),
+    _property_obj(scan_join_data, value, scan_join_value_ref),
+    _property_end()
+};
+
+typedef struct {
+    char*                       version;
+    char*                       flowDirection;
+    char*                       controlType;
+    char*                       messageType;
+    char*                       vendor;
+    char*                       timestamp;
+    char*                       sequence;
+    size_t                      dataNum;   
+    scan_join_data*            data;    
+} scan_join;
+
+reflect_item_t scan_join_ref[] = {
+    _property_string(scan_join, version),
+    _property_string(scan_join, flowDirection),
+    _property_string(scan_join, controlType),
+    _property_string(scan_join, messageType),
+    _property_string(scan_join, vendor),
+    _property_string(scan_join, timestamp),
+    _property_string(scan_join, sequence),
+    _property_int_ex(scan_join, dataNum, _ex_args_all),
+    _property_array_object(scan_join, data, scan_join_data_ref, 
+                            scan_join_data, dataNum),
+    _property_end()
+};
+
+/*******************************END**********************************************/
+
 
 /**
  * 构造在线/离线报文
