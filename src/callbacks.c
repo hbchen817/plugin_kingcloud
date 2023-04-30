@@ -1,6 +1,6 @@
 #include "callbacks.h"
 #include "cJSON.h"
-#include "config.h"
+#include "configuration.h"
 #include "error.h"
 #include "if_helper.h"
 #include "instance.h"
@@ -11,8 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "any.h"
-#include "protocol.h"
 
 static int common_mqtt_publish(const char *topic_pattern_str, any_t payload_pattern, const map_any *context) {
     any_t topic_pattern = {.type = kUnknown};
@@ -58,96 +56,6 @@ static int report_version() {
     }
     free(versionInfo);
     return ERR_SUCCESS;
-}
-
-int handle_kc_message_up(const char *topic, const char *message, int length, void *context) {
-    return 1;
-}
-
-int handle_kc_command_down(const char *topic, const char *message, int length, void *context) {
-    log_info("%s %s: %.*s", __FUNCTION__, topic, length, message);
-
-    // 解析json
-    cJSON *root = cJSON_Parse(message);
-    if (NULL == root) {
-        log_error("%s failed", __FUNCTION__);
-        cJSON_Delete(root);
-        return ERR_INVALID_ARGUMENT;
-    }
-
-    // 获取control type && code
-    cJSON *header = cJSON_GetObjectItem(root, "controlType");
-    cJSON *data = cJSON_GetObjectItem(root, "data");
-    char controlType[16];
-    char code[32];
-    memset(controlType, 0, sizeof(controlType));
-    memset(code, 0, sizeof(code));
-    cJSON *data0 = cJSON_GetArrayItem(data, 0);
-    cJSON *codeStr = cJSON_GetObjectItem(data0, "code");
-    strcpy(controlType, header->valuestring);
-    strcpy(code, codeStr->valuestring);
-    cJSON_Delete(root);
-
-    // 时间关系，这里直接根据金山云协议报文中的内容进行处理哈
-    // 可能会是一个巨长的if else
-    if ((0 == strcmp(KC_CONTROL_TYPE_CONTROL_FUNC, controlType)
-             && (0 == strcpm("start_zigbee_join", code)))) {
-        // 开启组网
-        start_join startJoin;
-        memset(&startJoin, 0, sizeof(start_join));
-        csonJsonStr2Struct(message, &startJoin, start_join_ref);
-
-        // TODO: 网关组网
-
-        // 释放
-        csonFreePointer(&startJoin, start_join_ref);
-
-        return ERR_SUCCESS;
-    }
-
-    // 停止组网
-    if ((0 == strcmp(KC_CONTROL_TYPE_CONTROL_FUNC, controlType)
-             && (0 == strcpm("stop_zigbee_join", code)))) {
-        stop_join stopJoin;
-        memset(&stopJoin, 0, sizeof(stop_join));
-        csonJsonStr2Struct(message, &stopJoin, stop_join_ref);
-
-        // TODO: 网关组网
-
-        // 释放
-        csonFreePointer(&stopJoin, stop_join_ref);
-
-        return ERR_SUCCESS;
-    }
-
-    // 局域网扫描入网
-    if ((0 == strcmp(KC_CONTROL_TYPE_CONTROL_FUNC, controlType)
-             && (0 == strcpm("network_scan_join", code)))) {
-        scan_join scanJoin;
-        memset(&scanJoin, 0, sizeof(scan_join));
-        csonJsonStr2Struct(message, &scanJoin, scan_join_ref);
-
-        // TODO: 网关组网
-
-        // 释放
-        csonFreePointer(&scanJoin, scan_join_ref);
-
-        return ERR_SUCCESS;
-    }
-
-
-
-    return 1;
-}
-
-int handle_kc_command_ack(const char *topic, const char *message, int length, void *context) {
-    log_info("%s %s: %.*s", __FUNCTION__, topic, length, message);
-    return 1;
-}
-
-int handle_kc_ota_ack(const char *topic, const char *message, int length, void *context) {
-    log_info("%s %s: %.*s", __FUNCTION__, topic, length, message);
-    return 1;
 }
 
 // 2.1.1 网关动态注册

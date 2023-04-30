@@ -1,5 +1,6 @@
 #pragma once
-#include "config.h"
+#include "callbacks.h"
+#include "configuration.h"
 #include "deque.h"
 #include "map.h"
 #include "plugin.h"
@@ -7,9 +8,6 @@
 #include "tsl_model.h"
 #include <stdatomic.h>
 #include <threads.h>
-#include "any.h"
-#include "callbacks.h"
-
 
 #define SYS_INTERFACE_NAME "eth0.2"
 
@@ -39,12 +37,7 @@ struct Instance {
     SetDevList           setDevList;
     RexPluginInfo_t      info;
     void                *context;
-    char                 clientId[32];
-    char                 modelCode[32];
-    char                 vendorCode[32];
-    char                 hexModelId[32];
     char                 productKey[32];
-    char                 productSecret[40];
     char                 deviceName[32];
     char                 deviceSecret[40];
     char                 macCOO[32];
@@ -52,10 +45,6 @@ struct Instance {
     char                 mqttBroker[256];
     char                 mqttUsername[32];
     char                 mqttPassword[32];
-    char                 messageUpTopic[128];
-    char                 commandDownTopic[128];
-    char                 commandAckTopic[128];
-    char                 otaAckTopic[128];
     struct DeviceList    devList;
     atomic_int           sequence;
     struct MqttInstance *mqtt;
@@ -79,7 +68,9 @@ void instance_release_timer(int fd);
 void add_device(const char *mac, const RexTslModelInfo_t *tsl, const char *secret);
 void remove_device(const char *mac);
 
+#if ENABLE_HTTP_REGISTER
 int register_gateway();
+#endif
 
 const char *get_gateway_product_key();
 const char *get_gateway_device_name();

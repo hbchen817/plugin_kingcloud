@@ -1,6 +1,6 @@
 #include "instance.h"
 #include "callbacks.h"
-#include "config.h"
+#include "configuration.h"
 #include "error.h"
 #include "global.h"
 #include "helper.h"
@@ -8,8 +8,6 @@
 #include "map.h"
 #include "mqtt.h"
 #include "protocol.h"
-#include "cJSON.h"
-#include "aes.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,7 +15,9 @@
 #include <threads.h>
 #include <time.h>
 #include <unistd.h>
+#if ENABLE_HTTP_REGISTER
 #include <curl/curl.h>
+#endif
 
 #define LOG_LEVEL_FATAL  0
 #define LOG_LEVEL_ERROR  1
@@ -148,60 +148,44 @@ void instance_init(RexInitParameter_t *parameter, void *ctx) {
         }
     }
     instance.context       = ctx;
-    
-    
-
-    // 序列号初始化
+    const char *updateFile = CONFIG_UPDATE_FILE;
+    if (0 != access(updateFile, F_OK)) {
+        updateFile = NULL;
+    }
+    if (load_config(CONFIG_FILE_PATH, updateFile) != ERR_SUCCESS) {
+        log_error("load from config failed");
+    } else if (updateFile) {
+        unlink(updateFile);
+    }
+    if (instance.readConf(ctx, "mqtt_broker", instance.mqttBroker, sizeof(instance.mqttBroker) - 1) > 0) {
+        instance.readConf(ctx, "mqtt_username", instance.mqttUsername, sizeof(instance.mqttUsername) - 1);
+        instance.readConf(ctx, "mqtt_password", instance.mqttPassword, sizeof(instance.mqttPassword) - 1);
+    }
+    if (instance.readConf(ctx, "device_name", instance.deviceName, sizeof(instance.deviceName) - 1) <= 0) {
+        long long mac = if_gethwaddr(SYS_INTERFACE_NAME);
+        if (mac == 0) {
+            log_warn("Get MAC failed");
+            mac = rand() & 0xFFFF;
+            mac = (mac << 16) | (rand() & 0xFFFF);
+            mac = (mac << 16) | (rand() & 0xFFFF);
+        }
+        base64_encode(instance.deviceName, (unsigned char *)&mac, 6);
+    }
+    instance.readConf(ctx, "device_secret", instance.deviceSecret, sizeof(instance.deviceSecret) - 1);
     atomic_store(&instance.sequence, (int)time(NULL));
-
-    // device初始化
     mtx_init(&instance.mtxDevices, mtx_plain);
-
-    // 创建device map
     instance.devices      = map_device_create();
-
-    // 创建request map
     instance.requests     = map_request_create();
-
-    // 创建定时器
     instance.timerManager = tm_create(0, "tm_timeout");
-
-    // 定时队列初始化
     queue_timer_init(&instance.activeTimers);
     queue_timer_init(&instance.timerPool);
-
-    // 事务相关初始化
     atomic_init(&instance.transId, 0);
     queue_transaction_init(&instance.transactions);
-
-    // 请求金山云平台，获取相关参数
-    int ret = register_gateway();
-    if (ret != ERR_SUCCESS) {
-        log_error("register gateway error");
-        return;
+    if (instance.mqttBroker[0] != '\0') {
+        instance.mqtt = mqtt_new(instance.mqttBroker, instance.mqttUsername, instance.mqttPassword);
+    } else if (g_config.basic.url != NULL && g_config.basic.url[0] != '\0') {
+        instance.mqtt = mqtt_new(g_config.basic.url, g_config.basic.username, g_config.basic.password);
     }
-
-    // TODO: 如何生成mqtt user name & mqtt password
-
-    // 初始化几个topic
-    // vendor_code/hex_mode_id/{clientId}/message/up
-    sprintf(instance.messageUpTopic, "%s/%s/%s/message/up", instance.vendorCode, 
-                instance.hexModelId, instance.clientId);
-
-    //  {vendor_code}/{hex_mode_id}/{clientId}/command/down
-    sprintf(instance.commandDownTopic, "%s/%s/%s/command/down", instance.vendorCode, 
-                instance.hexModelId, instance.clientId);
-    
-    //  {vendor_code}/{hex_mode_id}/{clientId}/command/ack
-    sprintf(instance.commandAckTopic, "%s/%s/%s/command/ack", instance.vendorCode, 
-                instance.hexModelId, instance.clientId);
-
-    //  {vendor_code}/{hex_mode_id}/{clientId}/ota/ack
-    sprintf(instance.otaAckTopic, "%s/%s/%s/ota/ack", instance.vendorCode, 
-                instance.hexModelId, instance.clientId);
-
-    // 创建mqtt实例
-    instance.mqtt = mqtt_new(instance.mqttBroker, instance.mqttUsername, instance.mqttPassword);
 }
 
 void instance_deinit() {
@@ -246,11 +230,22 @@ void instance_release_timer(int fd) {
     }
 }
 
-#define SUBSCRIBE_DOWNSTREAM_TOPIC(name, func)      \                                                                                                           \
-    mqtt_subscribe_ex(instance.mqtt, topic, func, NULL, logout_topics, strdup(topic)); 
-
-#define SUBSCRIBE_UPSTREAM_TOPIC(topic, func)   \                                                                                                                \
-    mqtt_subscribe_ex(instance.mqtt, topic, func, NULL, logout_topics, strdup(topic));
+#define SUBSCRIBE_DOWNSTREAM_TOPIC(name, func)                                                                                                                 \
+    if (g_config.name.enable && g_config.name.req_topic) {                                                                                                     \
+        if (format_string_from_context(topic, sizeof(topic), g_config.name.req_topic, context) < 0) {                                                          \
+            log_error("invalid topic: %s", g_config.name.req_topic);                                                                                           \
+        } else {                                                                                                                                               \
+            mqtt_subscribe_ex(instance.mqtt, topic, func, NULL, logout_topics, strdup(topic));                                                                 \
+        }                                                                                                                                                      \
+    }
+#define SUBSCRIBE_UPSTREAM_TOPIC(name, func)                                                                                                                   \
+    if (g_config.name.enable && g_config.name.res_topic) {                                                                                                     \
+        if (format_string_from_context(topic, sizeof(topic), g_config.name.res_topic, context) < 0) {                                                          \
+            log_error("invalid topic: %s", g_config.name.res_topic);                                                                                           \
+        } else {                                                                                                                                               \
+            mqtt_subscribe_ex(instance.mqtt, topic, func, NULL, logout_topics, strdup(topic));                                                                 \
+        }                                                                                                                                                      \
+    }
 
 static void logout_topics(void *context, int code) {
     log_info("subscribe: %s", (const char *)context);
@@ -266,23 +261,88 @@ void add_device(const char *mac, const RexTslModelInfo_t *tsl, const char *secre
     map_any_insert(context, NAME_DEV_PRODUCT_KEY, any_from_const_string(tsl->productId));
     map_any_insert(context, NAME_DEV_DEVICE_NAME, any_from_const_string(mac));
     char topic[256];
-
-    // 注册topic
-    mqtt_subscribe_ex(instance.mqtt, instance.messageUpTopic, 
-                        handle_kc_message_up, NULL, logout_topics, strdup(topic)); 
-    mqtt_subscribe_ex(instance.mqtt, instance.commandDownTopic, 
-                        handle_kc_command_down, NULL, logout_topics, strdup(topic)); 
-    mqtt_subscribe_ex(instance.mqtt, instance.commandAckTopic, 
-                        handle_kc_command_ack, NULL, logout_topics, strdup(topic)); 
-    mqtt_subscribe_ex(instance.mqtt, instance.otaAckTopic, 
-                        handle_kc_ota_ack, NULL, logout_topics, strdup(topic));
-
+    SUBSCRIBE_UPSTREAM_TOPIC(dev_login, handle_sub_login_reply)
+    SUBSCRIBE_UPSTREAM_TOPIC(dev_logout, handle_sub_logout_reply)
+    SUBSCRIBE_UPSTREAM_TOPIC(dev_property_post, handle_event_property_post_reply)
+    SUBSCRIBE_DOWNSTREAM_TOPIC(dev_property_set, handle_service_property_set)
+    SUBSCRIBE_DOWNSTREAM_TOPIC(dev_set_alias, handle_service_set_alias)
+    SUBSCRIBE_DOWNSTREAM_TOPIC(dev_ota_request, handle_dev_ota_request)
+    SUBSCRIBE_UPSTREAM_TOPIC(dev_ota_progress, handle_ota_progress_reply)
+    for (int j = 0; j < tsl->eventInfoNum; j++) {
+        map_any_iterator *iter = map_any_find(context, NAME_DEV_EVENT_NAME);
+        if (iter == NULL) {
+            map_any_insert(context, NAME_DEV_EVENT_NAME, any_from_const_string(tsl->eventInfoList[j].identifier));
+        } else {
+            any_set_const_string(&iter->val0, tsl->eventInfoList[j].identifier);
+        }
+        for (int i = 0; i < g_config.dev_event_post_cnt; i++) {
+            bool           satisfy = true;
+            config_func_t *config  = &g_config.dev_event_post[i];
+            if (!config->enable || !config->res_topic) {
+                satisfy = false;
+            }
+            if (satisfy && config->conditions) {
+                for (map_any_iterator *iter = map_any_first(config->conditions); iter != NULL && satisfy; iter = map_any_next(iter)) {
+                    if (strcmp(iter->key, NAME_DEV_EVENT_NAME) == 0) {
+                        if (!any_is_string(&iter->val0) || strcmp(iter->val0.u.sval, tsl->eventInfoList[j].identifier) != 0) {
+                            satisfy = false;
+                        }
+                    } else if (strcmp(iter->key, NAME_DEV_PRODUCT_KEY) == 0) {
+                        if (!any_is_string(&iter->val0) || strcmp(iter->val0.u.sval, tsl->productId) != 0) {
+                            satisfy = false;
+                        }
+                    }
+                }
+            }
+            if (satisfy) {
+                if (format_string_from_context(topic, sizeof(topic), config->res_topic, context) < 0) {
+                    log_error("invalid topic: %s", config->res_topic);
+                } else {
+                    mqtt_subscribe_ex(instance.mqtt, topic, handle_event_post_reply, NULL, logout_topics, strdup(topic));
+                }
+            }
+        }
+    }
     map_any_iterator *iter = map_any_find(context, NAME_DEV_EVENT_NAME);
     if (iter != NULL) {
         any_free(&iter->val0);
         map_any_erase(iter);
     }
-
+    for (int j = 0; j < tsl->serviceInfoNum; j++) {
+        map_any_iterator *iter = map_any_find(context, NAME_DEV_SERVICE_NAME);
+        if (iter == NULL) {
+            map_any_insert(context, NAME_DEV_SERVICE_NAME, any_from_const_string(tsl->serviceInfoList[j].identifier));
+        } else {
+            any_set_const_string(&iter->val0, tsl->serviceInfoList[j].identifier);
+        }
+        for (int i = 0; i < g_config.dev_service_call_cnt; i++) {
+            bool           satisfy = true;
+            config_func_t *config  = &g_config.dev_service_call[i];
+            if (!config->enable || !config->req_topic) {
+                satisfy = false;
+            }
+            if (satisfy && config->conditions) {
+                for (map_any_iterator *iter = map_any_first(config->conditions); iter != NULL && satisfy; iter = map_any_next(iter)) {
+                    if (strcmp(iter->key, NAME_DEV_SERVICE_NAME) == 0) {
+                        if (!any_is_string(&iter->val0) || strcmp(iter->val0.u.sval, tsl->serviceInfoList[j].identifier) != 0) {
+                            satisfy = false;
+                        }
+                    } else if (strcmp(iter->key, NAME_DEV_PRODUCT_KEY) == 0) {
+                        if (!any_is_string(&iter->val0) || strcmp(iter->val0.u.sval, tsl->productId) != 0) {
+                            satisfy = false;
+                        }
+                    }
+                }
+            }
+            if (satisfy) {
+                if (format_string_from_context(topic, sizeof(topic), config->req_topic, context) < 0) {
+                    log_error("invalid topic: %s", config->res_topic);
+                } else {
+                    mqtt_subscribe_ex(instance.mqtt, topic, handle_service, (void *)(intptr_t)i, logout_topics, strdup(topic));
+                }
+            }
+        }
+    }
     map_any_destroy_ex(context);
     mtx_lock(&instance.mtxDevices);
     map_device_insert(instance.devices, mac, tsl, NULL);
@@ -327,17 +387,86 @@ void remove_device(const char *mac) {
         map_any_insert(context, NAME_DEV_PRODUCT_KEY, any_from_const_string(tsl->productId));
         map_any_insert(context, NAME_DEV_DEVICE_NAME, any_from_const_string(mac));
         char topic[256];
-        mqtt_unsubscribe(instance.mqtt, instance.messageUpTopic);
-        mqtt_unsubscribe(instance.mqtt, instance.commandDownTopic);
-        mqtt_unsubscribe(instance.mqtt, instance.commandAckTopic);
-        mqtt_unsubscribe(instance.mqtt, instance.otaAckTopic);
-
+        UNSUBSCRIBE_UPSTREAM_TOPIC(dev_login)
+        UNSUBSCRIBE_UPSTREAM_TOPIC(dev_logout)
+        UNSUBSCRIBE_UPSTREAM_TOPIC(dev_property_post)
+        UNSUBSCRIBE_DOWNSTREAM_TOPIC(dev_property_set)
+        UNSUBSCRIBE_DOWNSTREAM_TOPIC(dev_set_alias)
+        for (int j = 0; j < tsl->eventInfoNum; j++) {
+            map_any_iterator *it = map_any_find(context, NAME_DEV_EVENT_NAME);
+            if (it == NULL) {
+                map_any_insert(context, NAME_DEV_EVENT_NAME, any_from_const_string(tsl->eventInfoList[j].identifier));
+            } else {
+                any_set_const_string(&it->val0, tsl->eventInfoList[j].identifier);
+            }
+            for (int i = 0; i < g_config.dev_event_post_cnt; i++) {
+                bool           satisfy = true;
+                config_func_t *config  = &g_config.dev_event_post[i];
+                if (!config->enable || !config->res_topic) {
+                    satisfy = false;
+                }
+                if (satisfy && config->conditions) {
+                    for (map_any_iterator *iter = map_any_first(config->conditions); iter != NULL && satisfy; iter = map_any_next(iter)) {
+                        if (strcmp(iter->key, NAME_DEV_EVENT_NAME) == 0) {
+                            if (!any_is_string(&iter->val0) || strcmp(iter->val0.u.sval, tsl->eventInfoList[j].identifier) != 0) {
+                                satisfy = false;
+                            }
+                        } else if (strcmp(iter->key, NAME_DEV_PRODUCT_KEY) == 0) {
+                            if (!any_is_string(&iter->val0) || strcmp(iter->val0.u.sval, tsl->productId) != 0) {
+                                satisfy = false;
+                            }
+                        }
+                    }
+                }
+                if (satisfy) {
+                    if (format_string_from_context(topic, sizeof(topic), config->res_topic, context) < 0) {
+                        log_error("invalid topic: %s", config->res_topic);
+                    } else {
+                        mqtt_unsubscribe(instance.mqtt, topic);
+                    }
+                }
+            }
+        }
         map_any_iterator *it = map_any_find(context, NAME_DEV_EVENT_NAME);
         if (it != NULL) {
             any_free(&it->val0);
             map_any_erase(it);
         }
-        
+        for (int j = 0; j < tsl->serviceInfoNum; j++) {
+            map_any_iterator *it = map_any_find(context, NAME_DEV_SERVICE_NAME);
+            if (it == NULL) {
+                map_any_insert(context, NAME_DEV_SERVICE_NAME, any_from_const_string(tsl->serviceInfoList[j].identifier));
+            } else {
+                any_set_const_string(&it->val0, tsl->serviceInfoList[j].identifier);
+            }
+            for (int i = 0; i < g_config.dev_service_call_cnt; i++) {
+                bool           satisfy = true;
+                config_func_t *config  = &g_config.dev_service_call[i];
+                if (!config->enable || !config->req_topic) {
+                    satisfy = false;
+                }
+                if (satisfy && config->conditions) {
+                    for (map_any_iterator *iter = map_any_first(config->conditions); iter != NULL && satisfy; iter = map_any_next(iter)) {
+                        if (strcmp(iter->key, NAME_DEV_SERVICE_NAME) == 0) {
+                            if (!any_is_equal_str(&iter->val0, tsl->serviceInfoList[j].identifier)) {
+                                satisfy = false;
+                            }
+                        } else if (strcmp(iter->key, NAME_DEV_PRODUCT_KEY) == 0) {
+                            if (!any_is_equal_str(&iter->val0, tsl->productId)) {
+                                satisfy = false;
+                            }
+                        }
+                    }
+                }
+                if (satisfy) {
+                    if (format_string_from_context(topic, sizeof(topic), config->req_topic, context) < 0) {
+                        log_error("invalid topic: %s", config->res_topic);
+                    } else {
+                        mqtt_unsubscribe(instance.mqtt, topic);
+                    }
+                }
+            }
+        }
         map_any_destroy_ex(context);
         mtx_lock(&instance.mtxDevices);
         if (iter->val1 != NULL) {
@@ -353,6 +482,7 @@ struct message_view_t {
     char msg[1024];
 };
 
+#if ENABLE_HTTP_REGISTER
 static size_t write_data(void *data, size_t size, size_t nmemb, void *userp) {
     struct message_view_t *msg = (struct message_view_t *)userp;
     memcpy(&msg->msg[msg->len], data, size * nmemb);
@@ -369,90 +499,56 @@ int register_gateway() {
     headers                    = curl_slist_append(headers, "Content-Type: application/json");
     headers                    = curl_slist_append(headers, "Connection: Keep-Alive");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    // curl_easy_setopt(curl, CURLOPT_URL, "https://develop.rexense.com/auth/register/device");
+    curl_easy_setopt(curl, CURLOPT_URL, "http://192.168.1.103:9090/auth/register/device");
 
-    // 从配置中读取金山云的url地址
-    struct dp_conf_node *val = conf_get_node(g_config_root, KC_CONFIG_URL_KEY);
-    curl_easy_setopt(curl, CURLOPT_URL, val->value);
-
-    // 根据协议文档，构造cipherText JSON串，格式如下:
-    // {
-    //      "clientId":"",
-    //      "vendorCode":""
-    //  }
-    cipher_text cipher_text;
-    memset(&cipher_text, 0, sizeof(cipher_text));
-    cipher_text.clientId = instance.clientId;
-    cipher_text.vendorCode = instance.vendorCode;
-    char* cipher_text_json;
-    int ret = csonStruct2JsonStr(cipher_text_json, &cipher_text, cipher_text_ref);
-    if (ERR_SUCCESS != ret) {
-        log_error("cson struct[cipher_text] to json error");
-        return 1;
+    struct DeviceRegisterReq_t req;
+    memset(&req, 0, sizeof(struct DeviceRegisterReq_t));
+    req.deviceName  = instance.deviceName;
+    req.productKey  = instance.productKey;
+    req.random      = rand();
+    req.signMethod  = "hmacSha256";
+    const char *key = "myYMO7mFHBPe7YMB";
+    char        msg[75];
+    sprintf(msg, "%s%s%d", req.deviceName, req.productKey, req.random);
+    req.sign = hmac("SHA256", msg, strlen(msg), key, strlen(key));
+    char buf[1024];
+    int  ret = reflect_struct2str_preallocated(buf, sizeof(buf), &req, DeviceRegisterReq_reflection);
+    if (ret != REFLECT_ERR_SUCCESS) {
+        log_error("serialize failed: %s", reflect_err_str(ret));
+        curl_easy_cleanup(curl);
+        free(req.sign);
+        return -1;
     }
+    log_info("register gateway: %s", buf);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buf);
 
-    // TODO: 按照协议规定，需要对cipher_text_json进行aes加密
-
-    // 开始构造请求json串，按照预定，格式如下：
-    // {
-    //      "cipherText": "",
-    //      "productKey": ""
-    // }
-    device_reg_request reg_request;
-    memset(&reg_request, 0, sizeof(device_reg_request));
-    reg_request.productKey = instance.productKey;
-    reg_request.cipherText = cipher_text_json;
-    char* reg_request_json;
-    ret = csonStruct2JsonStr(reg_request_json, &reg_request, device_reg_request_ref);
-    if (ERR_SUCCESS != ret) {
-        log_error("cson struct[device_reg_request] to json error");
-        free(cipher_text_json);
-        return 1;
-    }
-
-    // 尝试请求金山云
-    log_info("register gateway: %s", reg_request_json);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, reg_request_json);
     struct message_view_t ret_msg;
     memset(&ret_msg, 0, sizeof(ret_msg));
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ret_msg);
-    int ret = curl_easy_perform(curl);
+    ret = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
-    free(cipher_text_json);
-    free(reg_request_json);
+    free(req.sign);
 
-    // 如果请求成功了，可以解密mqtt一些参数了
     if (ret == 0) {
         ret_msg.msg[ret_msg.len] = '\0';
         long response_code;
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
         if (response_code == 200) {
-            device_reg_response reg_response;
-            memset(&reg_response, 0, sizeof(device_reg_response));
-            ret = csonJsonStr2Struct(ret_msg.msg, &reg_response, device_reg_response_ref);
-            if (ret == ERR_SUCCESS) {
-                if (reg_response.code == 200) {
+            struct DeviceRegisterRes_t res;
+            ret = reflect_str2struct(ret_msg.msg, &res, DeviceRegisterRes_reflection);
+            if (ret == REFLECT_ERR_SUCCESS) {
+                if (res.code == 200) {
                     log_info("register gateway: %s", ret_msg.msg);
-
-                    // TODO: 针对reg_response中的data字段做AES解密
-
-                    // 将相关变量赋值给instance
-                    reg_response_data data;
-                    memset(&data, 0, sizeof(reg_response_data));
-                    ret = csonJsonStr2Struct(reg_response.data, &data, reg_response_data_ref);
-                    if (ret != ERR_SUCCESS) {
-                        log_warn("gateway data is illegal: %s", reg_response.data);
-                        ret = 1;
-                    } else {
-                        strcpy(instance.deviceName, data.deviceKey);
-                        strcpy(instance.deviceSecret, data.deviceSecret);
-                    }
-                    csonFreePointer(&data, reg_response_data_ref);
+                    strcpy(instance.deviceSecret, res.device.deviceSecret);
+                    instance.writeConf(instance.context, "device_name", instance.deviceName, strlen(instance.deviceName));
+                    instance.writeConf(instance.context, "device_secret", instance.deviceSecret, strlen(instance.deviceSecret));
                 } else {
                     log_warn("register failed: %s", ret_msg.msg);
                     ret = 1;
                 }
-                csonFreePointer(&reg_response, device_reg_request_ref);
+                reflect_free_ptr(&res, DeviceRegisterRes_reflection);
             }
         } else {
             log_warn("register failed: %d %s", response_code, ret_msg.msg);
@@ -461,6 +557,7 @@ int register_gateway() {
     }
     return ret;
 }
+#endif
 
 const char *get_gateway_product_key() {
     return instance.productKey;

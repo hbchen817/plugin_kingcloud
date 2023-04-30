@@ -1,5 +1,5 @@
 #include "callbacks.h"
-#include "config.h"
+#include "configuration.h"
 #include "helper.h"
 #include "instance.h"
 #include "map.h"
@@ -171,81 +171,80 @@ const RexPluginInfo_t *rex_get_info() {
     return &instance.info;
 }
 
-// struct PluginConfig_t {
-//     char *mqttBroker;
-//     char *mqttUsername;
-//     char *mqttPassword;
-// };
-// const struct reflect_reflection PluginConfig_reflection[] = {
-//     REFLECT_DECLARE_STR_PTR(struct PluginConfig_t, mqttBroker),
-//     REFLECT_DECLARE_STR_PTR(struct PluginConfig_t, mqttUsername),
-//     REFLECT_DECLARE_STR_PTR(struct PluginConfig_t, mqttPassword),
-//     REFLECT_DECLARE_END(),
-// };
+struct PluginConfig_t {
+    char *mqttBroker;
+    char *mqttUsername;
+    char *mqttPassword;
+};
+const struct reflect_reflection PluginConfig_reflection[] = {
+    REFLECT_DECLARE_STR_PTR(struct PluginConfig_t, mqttBroker),
+    REFLECT_DECLARE_STR_PTR(struct PluginConfig_t, mqttUsername),
+    REFLECT_DECLARE_STR_PTR(struct PluginConfig_t, mqttPassword),
+    REFLECT_DECLARE_END(),
+};
 
 int rex_get_data(void *ctx, const char *requestType, const void *requestData, GetDataCallBack getDataCb) {
-    // if (strcmp(requestType, REQUEST_TYPE_GET_CONF) == 0) {
-    //     struct PluginConfig_t config = {.mqttBroker = instance.mqttBroker, .mqttUsername = instance.mqttUsername, .mqttPassword = instance.mqttPassword};
-    //     if (config.mqttBroker[0] == '\0') {
-    //         config.mqttBroker = g_config.basic.url;
-    //         if (g_config.basic.username) {
-    //             config.mqttUsername = g_config.basic.username;
-    //         }
-    //         if (g_config.basic.password) {
-    //             config.mqttPassword = g_config.basic.password;
-    //         }
-    //     }
-    //     char *payload = NULL;
-    //     int   ret     = reflect_struct2str(&payload, &config, PluginConfig_reflection);
-    //     if (ret == REFLECT_ERR_SUCCESS) {
-    //         log_info("%p, %s", payload, payload);
-    //         getDataCb(ctx, payload);
-    //         free(payload);
-    //         return 0;
-    //     } else {
-    //         log_error("reflect_struct2str failed %d", ret);
-    //         return -1;
-    //     }
-    // } else if (strcmp(requestType, REQUEST_TYPE_POST_CONF) == 0) {
-    //     struct PluginConfig_t config;
-    //     memset(&config, 0, sizeof(struct PluginConfig_t));
-    //     int ret = reflect_str2struct(requestData, &config, PluginConfig_reflection);
-    //     if (ret == REFLECT_ERR_SUCCESS) {
-    //         bool restart = false;
-    //         if (config.mqttBroker != NULL && strcmp(instance.mqttBroker, config.mqttBroker)) {
-    //             log_info("set broker to: %s", config.mqttBroker);
-    //             restart = true;
-    //             strcpy(instance.mqttBroker, config.mqttBroker);
-    //             instance.writeConf(instance.context, "mqtt_broker", instance.mqttBroker, strlen(instance.mqttBroker));
-    //         }
-    //         if (config.mqttUsername != NULL && strcmp(instance.mqttUsername, config.mqttUsername)) {
-    //             log_info("set username to: %s", config.mqttUsername);
-    //             restart = true;
-    //             strcpy(instance.mqttUsername, config.mqttUsername);
-    //             instance.writeConf(instance.context, "mqtt_username", instance.mqttUsername, strlen(instance.mqttUsername));
-    //         }
-    //         if (config.mqttPassword != NULL && strcmp(instance.mqttPassword, config.mqttPassword)) {
-    //             log_info("set password to: %s", config.mqttPassword);
-    //             restart = true;
-    //             strcpy(instance.mqttPassword, config.mqttPassword);
-    //             instance.writeConf(instance.context, "mqtt_password", instance.mqttPassword, strlen(instance.mqttPassword));
-    //         }
-    //         reflect_free_ptr(&config, PluginConfig_reflection);
-    //         getDataCb(ctx, "{\"code\":200}");
-    //         if (restart) {
-    //             rex_stop();
-    //             mqtt_delete(instance.mqtt);
-    //             instance.mqtt = mqtt_new(instance.mqttBroker, instance.mqttUsername, instance.mqttPassword);
-    //             rex_start();
-    //         }
-    //         return 0;
-    //     } else {
-    //         log_error("reflect_str2struct failed %d", ret);
-    //         return -1;
-    //     }
-    // } else {
-    //     log_error("unknown requestType: %s", requestType);
-    //     return -1;
-    // }
-    return 0;
+    if (strcmp(requestType, REQUEST_TYPE_GET_CONF) == 0) {
+        struct PluginConfig_t config = {.mqttBroker = instance.mqttBroker, .mqttUsername = instance.mqttUsername, .mqttPassword = instance.mqttPassword};
+        if (config.mqttBroker[0] == '\0') {
+            config.mqttBroker = g_config.basic.url;
+            if (g_config.basic.username) {
+                config.mqttUsername = g_config.basic.username;
+            }
+            if (g_config.basic.password) {
+                config.mqttPassword = g_config.basic.password;
+            }
+        }
+        char *payload = NULL;
+        int   ret     = reflect_struct2str(&payload, &config, PluginConfig_reflection);
+        if (ret == REFLECT_ERR_SUCCESS) {
+            log_info("%p, %s", payload, payload);
+            getDataCb(ctx, payload);
+            free(payload);
+            return 0;
+        } else {
+            log_error("reflect_struct2str failed %d", ret);
+            return -1;
+        }
+    } else if (strcmp(requestType, REQUEST_TYPE_POST_CONF) == 0) {
+        struct PluginConfig_t config;
+        memset(&config, 0, sizeof(struct PluginConfig_t));
+        int ret = reflect_str2struct(requestData, &config, PluginConfig_reflection);
+        if (ret == REFLECT_ERR_SUCCESS) {
+            bool restart = false;
+            if (config.mqttBroker != NULL && strcmp(instance.mqttBroker, config.mqttBroker)) {
+                log_info("set broker to: %s", config.mqttBroker);
+                restart = true;
+                strcpy(instance.mqttBroker, config.mqttBroker);
+                instance.writeConf(instance.context, "mqtt_broker", instance.mqttBroker, strlen(instance.mqttBroker));
+            }
+            if (config.mqttUsername != NULL && strcmp(instance.mqttUsername, config.mqttUsername)) {
+                log_info("set username to: %s", config.mqttUsername);
+                restart = true;
+                strcpy(instance.mqttUsername, config.mqttUsername);
+                instance.writeConf(instance.context, "mqtt_username", instance.mqttUsername, strlen(instance.mqttUsername));
+            }
+            if (config.mqttPassword != NULL && strcmp(instance.mqttPassword, config.mqttPassword)) {
+                log_info("set password to: %s", config.mqttPassword);
+                restart = true;
+                strcpy(instance.mqttPassword, config.mqttPassword);
+                instance.writeConf(instance.context, "mqtt_password", instance.mqttPassword, strlen(instance.mqttPassword));
+            }
+            reflect_free_ptr(&config, PluginConfig_reflection);
+            getDataCb(ctx, "{\"code\":200}");
+            if (restart) {
+                rex_stop();
+                mqtt_delete(instance.mqtt);
+                instance.mqtt = mqtt_new(instance.mqttBroker, instance.mqttUsername, instance.mqttPassword);
+                rex_start();
+            }
+            return 0;
+        } else {
+            log_error("reflect_str2struct failed %d", ret);
+            return -1;
+        }
+    } else {
+        log_error("unknown requestType: %s", requestType);
+        return -1;
+    }
 }

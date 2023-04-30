@@ -1,506 +1,240 @@
-#ifndef _PROTOCOL_H
-#define _PROTOCOL_H
+#pragma once
+#include "reflect.h"
 
-#include "cson.h"
-#include "instance.h"
+extern const char * MQTT_PROTOCOL_VERSION;
 
-/**
- * 宏定义
-*/
-#define KC_PROTOCOL_VERSION             "2.0.0"
-#define KC_FLOW_DIRECTION_DOWN          "0"
-#define KC_FLOW_DIRECTION_UP            "1"
-#define KC_CONTROL_TYPE_UNBIND          "unbind"
-#define KC_CONTROL_TYPE_OTA             "ota"
-#define KC_CONTROL_TYPE_CONTROL_FUNC    "control.func"
-#define KC_CONTROL_TYPE_CONTROL_PROP    "control.prop"
-#define KC_CONTROL_TYPE_CONTROL_SCENE   "control.scene"
-#define KC_CONTROL_TYPE_QUERY_PROP      "query.prop"
-#define KC_CONTROL_TYPE_SCENE_CONFIG    "scene.config"
-#define KC_MSG_TYPE_SCENE               "scene"
-#define KC_MSG_TYPE_CONTROL_PROP        "control.prop"
-#define KC_MSG_TYPE_EVENT               "event"
-#define KC_MSG_TYPE_OTA                 "ota"
-#define KC_MSG_TYPE_ONLINE              "online"
-#define KC_MSG_TYPE_OFFLINE             "offline"
-#define KC_MSG_TYPE_UNBIND              "unbind"
-#define KC_MSG_TYPE_BIND                "bind"
-#define KC_MSG_TYPE_HEARTBEAT           "heartbeat"
-#define KC_MSG_TYPE_DISCOVERY           "discovery"
-#define KC_MSG_TYPE_ACK                 "ack"
-
-/**
- * 设备注册相关结构体
-*/
-typedef struct {
-    char*       clientId;
-    char*       vendorCode;
-} cipher_text;
-
-reflect_item_t cipher_text_ref[] = {
-    _property_string(cipher_text, clientId),
-    _property_string(cipher_text, vendorCode),
-    _property_end()
+struct DeviceRegisterReq_t {
+    char * deviceName;
+    char * productKey;
+    int random;
+    char * signMethod;
+    char * sign;
 };
+extern const struct reflect_reflection DeviceRegisterReq_reflection[];
 
-typedef struct {
-    char*       cipherText;
-    char*       productKey;
-} device_reg_request;
-
-reflect_item_t device_reg_request_ref[] = {
-    _property_string(device_reg_request, cipherText),
-    _property_string(device_reg_request, productKey),
-    _property_end()
+struct CommonReq_t {
+    char id[12];
+    const char *version;
+    const char *method;
 };
+extern const struct reflect_reflection CommonReq_reflection[];
 
-typedef struct {
-    int         code;
-    char*       data;
-    char*       message;
-    char*       traceId;
-} device_reg_response;
-
-reflect_item_t device_reg_response_ref[] = {
-    _property_int(device_reg_response, code),
-    _property_string(device_reg_response, data),
-    _property_string(device_reg_response, message),
-    _property_string(device_reg_response, traceId),
-    _property_end()
+struct DeviceParam_t {
+    const char *deviceName;
+    const char *productKey;
 };
-
-typedef struct {
-    char*       deviceKey;
-    char*       deviceSecret;
-    char*       clientId;
-} reg_response_data;
-
-reflect_item_t reg_response_data_ref[] = {
-    _property_string(reg_response_data, deviceKey),
-    _property_string(reg_response_data, deviceSecret),
-    _property_string(reg_response_data, clientId),
-    _property_end()
+extern const struct reflect_reflection DeviceParam_reflection[];
+struct DeviceListReq_t {
+    char id[12];
+    char *version;
+    char *method;
+    struct DeviceParam_t *params;
+    int count;
 };
+extern const struct reflect_reflection DeviceListReq_reflection[];
 
-/**
- * 金山云MQTT通信相关json定义
-*/
-/*******************************BEGIN: 更改broker地址报文********************************/
-typedef struct {
-    char*       authServerAddr;
-    char*       mqttAddr;
-    char*       mqttPort;
-} cmd_change_server_value;
-
-reflect_item_t cmd_change_server_value_ref[] = {
-    _property_string(cmd_change_server_value, authServerAddr),
-    _property_string(cmd_change_server_value, mqttAddr),
-    _property_string(cmd_change_server_value, mqttPort),
-    _property_end()
+struct TopoAddParam_t {
+    const char *deviceName;
+    const char *productKey;
+    long long timestamp;
+    char *signMethod;
+    char *sign;
 };
-
-typedef struct {
-    char*       model;
-    char*       parentDeviceId;
-    char*       deviceId;
-    char*       code;
-    char*       value;
-} cmd_change_server_data;
-
-reflect_item_t cmd_change_server_data_ref[] = {
-    _property_string(cmd_change_server_data, model),
-    _property_string(cmd_change_server_data, parentDeviceId),
-    _property_string(cmd_change_server_data, deviceId),
-    _property_string(cmd_change_server_data, code),
-    _property_string(cmd_change_server_data, value),
-    _property_end()
+extern const struct reflect_reflection TopoAddParam_reflection[];
+struct TopoAddReq_t {
+    char id[12];
+    char *version;
+    char *method;
+    struct TopoAddParam_t *params;
+    int count;
 };
+extern const struct reflect_reflection TopoAddReq_reflection[];
 
-typedef struct {
-    char*                       version;
-    char*                       flowDirection;
-    char*                       controlType;
-    char*                       messageType;
-    char*                       vendor;
-    char*                       timestamp;
-    char*                       sequence;
-    size_t                      dataNum;   
-    cmd_change_server_data*     data;    
-} cmd_change_server;
-
-reflect_item_t cmd_change_server_ref[] = {
-    _property_string(cmd_change_server, version),
-    _property_string(cmd_change_server, flowDirection),
-    _property_string(cmd_change_server, controlType),
-    _property_string(cmd_change_server, messageType),
-    _property_string(cmd_change_server, vendor),
-    _property_string(cmd_change_server, timestamp),
-    _property_string(cmd_change_server, sequence),
-    _property_int_ex(cmd_change_server, dataNum, _ex_args_all),
-    _property_array_object(cmd_change_server, data, cmd_change_server_data_ref, 
-                            cmd_change_server_data, dataNum),
-    _property_end()
+struct TopoChangeReq_t {
+    char id[12];
+    char *version;
+    char *method;
+    int status;
+    struct DeviceParam_t *subList;
+    int count;
 };
+extern const struct reflect_reflection TopoChangeReq_reflection[];
 
-/*******************************END: 更改broker地址报文********************************/
-
-
-/*******************************BEGIN: 在线/离线报文********************************/
-typedef struct {
-    char*       model;
-    char*       parentDeviceId;
-    char*       deviceId;
-    char*       code;
-    char*       value;
-} msg_online_data;
-
-reflect_item_t msg_online_data_ref[] = {
-    _property_string(msg_online_data, model),
-    _property_string(msg_online_data, parentDeviceId),
-    _property_string(msg_online_data, deviceId),
-    _property_string(msg_online_data, code),
-    _property_string(msg_online_data, value),
-    _property_end()
+struct DeviceLogin_t {
+    const char *productKey;
+    const char *deviceName;
+    long long timestamp;
+    char *signMethod;
+    char *sign;
+    bool cleanSession;
 };
-
-typedef struct {
-    char*                       version;
-    char*                       flowDirection;
-    char*                       controlType;
-    char*                       messageType;
-    char*                       vendor;
-    char*                       timestamp;
-    char*                       sequence;
-    size_t                      dataNum;   
-    msg_online_data*            data;    
-} msg_online;
-
-reflect_item_t msg_online_ref[] = {
-    _property_string(msg_online, version),
-    _property_string(msg_online, flowDirection),
-    _property_string(msg_online, controlType),
-    _property_string(msg_online, messageType),
-    _property_string(msg_online, vendor),
-    _property_string(msg_online, timestamp),
-    _property_string(msg_online, sequence),
-    _property_int_ex(msg_online, dataNum, _ex_args_all),
-    _property_array_object(msg_online, data, msg_online_data_ref, 
-                            msg_online_data, dataNum),
-    _property_end()
+extern const struct reflect_reflection DeviceLogin_reflection[];
+struct DeviceLoginReq_t {
+    char id[12];
+    char *version;
+    char *method;
+    struct DeviceLogin_t *deviceList;
+    int count;
 };
+extern const struct reflect_reflection DeviceLoginReq_reflection[];
 
-/*******************************END: 在线/离线报文********************************/
-
-/*******************************BEGIN: ack报文********************************/
-typedef struct {
-    char*       model;
-    char*       parentDeviceId;
-    char*       deviceId;
-    char*       code;
-    char*       value;
-} msg_ack_data;
-
-reflect_item_t msg_ack_data_ref[] = {
-    _property_string(msg_online_data, model),
-    _property_string(msg_online_data, parentDeviceId),
-    _property_string(msg_online_data, deviceId),
-    _property_string(msg_online_data, code),
-    _property_string(msg_online_data, value),
-    _property_end()
+struct DeviceProperty_t {
+    char *name;
+    char *value;
+    long long time;
 };
-
-typedef struct {
-    char*                       version;
-    char*                       flowDirection;
-    char*                       controlType;
-    char*                       messageType;
-    char*                       vendor;
-    char*                       timestamp;
-    char*                       sequence;
-    size_t                      dataNum;   
-    msg_ack_data*               data;    
-} msg_ack;
-
-reflect_item_t msg_ack_ref[] = {
-    _property_string(msg_ack, version),
-    _property_string(msg_ack, flowDirection),
-    _property_string(msg_ack, controlType),
-    _property_string(msg_ack, messageType),
-    _property_string(msg_ack, vendor),
-    _property_string(msg_ack, timestamp),
-    _property_string(msg_ack, sequence),
-    _property_int_ex(msg_ack, dataNum, _ex_args_all),
-    _property_array_object(msg_ack, data, msg_ack_data_ref, 
-                            msg_ack_data, dataNum),
-    _property_end()
+extern const struct reflect_reflection DeviceProperty_reflection[];
+struct PropertyPostReq_t {
+    char id[12];
+    char *version;
+    char *method;
+    struct DeviceProperty_t *params;
+    int count;
 };
+extern const struct reflect_reflection PropertyPostReq_reflection[];
 
-/*******************************END: ack报文********************************/
-
-/*******************************BEGIN: 心跳报文********************************/
-typedef struct {
-    char*       model;
-    char*       parentDeviceId;
-    char*       deviceId;
-    char*       code;
-    char*       value;
-} msg_heartbeat_data;
-
-reflect_item_t msg_heartbeat_data_ref[] = {
-    _property_string(msg_heartbeat_data, model),
-    _property_string(msg_heartbeat_data, parentDeviceId),
-    _property_string(msg_heartbeat_data, deviceId),
-    _property_string(msg_heartbeat_data, code),
-    _property_string(msg_heartbeat_data, value),
-    _property_end()
+struct DevicePropertySet_t {
+    char *name;
+    char *value;
 };
-
-typedef struct {
-    char*                       version;
-    char*                       flowDirection;
-    char*                       controlType;
-    char*                       messageType;
-    char*                       vendor;
-    char*                       timestamp;
-    char*                       sequence;
-    size_t                      dataNum;   
-    msg_heartbeat_data*         data;    
-} msg_heartbeat;
-
-reflect_item_t msg_heartbeat_ref[] = {
-    _property_string(msg_heartbeat, version),
-    _property_string(msg_heartbeat, flowDirection),
-    _property_string(msg_heartbeat, controlType),
-    _property_string(msg_heartbeat, messageType),
-    _property_string(msg_heartbeat, vendor),
-    _property_string(msg_heartbeat, timestamp),
-    _property_string(msg_heartbeat, sequence),
-    _property_int_ex(msg_heartbeat, dataNum, _ex_args_all),
-    _property_array_object(msg_heartbeat, data, msg_heartbeat_data_ref, 
-                            msg_heartbeat_data, dataNum),
-    _property_end()
+extern const struct reflect_reflection DevicePropertySet_reflection[];
+struct PropertySetReq_t {
+    char id[12];
+    char *version;
+    char *method;
+    struct DevicePropertySet_t *params;
+    int count;
 };
+extern const struct reflect_reflection PropertySetReq_reflection[];
 
-/*******************************END: 心跳报文********************************/
-
-/*******************************BEGIN: 开启组网报文********************************/
-typedef struct {
-    // 开启组网时长
-    char*       join_second;
-    // 组网方式
-    char*       join_type;
-} start_join_value;
-
-reflect_item_t start_join_value_ref[] = {
-    _property_string(start_join_value, join_second),
-    _property_string(start_join_value, join_type),
-    _property_end()
+struct KeyValuePair_t {
+    char *key;
+    char *value;
 };
-
-typedef struct {
-    char*               model;
-    char*               parentDeviceId;
-    char*               deviceId;
-    char*               code;
-    start_join_value*   value;
-} start_join_data;
-
-reflect_item_t start_join_data_ref[] = {
-    _property_string(start_join_data, model),
-    _property_string(start_join_data, parentDeviceId),
-    _property_string(start_join_data, deviceId),
-    _property_string(start_join_data, code),
-    _property_obj(start_join_data, value, start_join_value_ref),
-    _property_end()
+extern const struct reflect_reflection KeyValuePair_reflection[];
+struct EventPostReq_t {
+    char id[12];
+    char *version;
+    char *method;
+    long long time;
+    struct KeyValuePair_t *params;
+    int count;
 };
+extern const struct reflect_reflection EventPostReq_reflection[];
 
-typedef struct {
-    char*                       version;
-    char*                       flowDirection;
-    char*                       controlType;
-    char*                       messageType;
-    char*                       vendor;
-    char*                       timestamp;
-    char*                       sequence;
-    size_t                      dataNum;   
-    start_join_data*            data;    
-} start_join;
-
-reflect_item_t start_join_ref[] = {
-    _property_string(start_join, version),
-    _property_string(start_join, flowDirection),
-    _property_string(start_join, controlType),
-    _property_string(start_join, messageType),
-    _property_string(start_join, vendor),
-    _property_string(start_join, timestamp),
-    _property_string(start_join, sequence),
-    _property_int_ex(start_join, dataNum, _ex_args_all),
-    _property_array_object(start_join, data, start_join_data_ref, 
-                            start_join_data, dataNum),
-    _property_end()
+struct ServiceCallReq_t {
+    char id[12];
+    char *version;
+    char *method;
+    struct KeyValuePair_t *params;
+    int count;
 };
+extern const struct reflect_reflection ServiceCallReq_reflection[];
 
-/*******************************END**********************************************/
-
-/*******************************BEGIN: 停止组网报文********************************/
-typedef struct {
-    char*               model;
-    char*               parentDeviceId;
-    char*               deviceId;
-    char*               code;
-} stop_join_data;
-
-reflect_item_t stop_join_data_ref[] = {
-    _property_string(stop_join_data, model),
-    _property_string(stop_join_data, parentDeviceId),
-    _property_string(stop_join_data, deviceId),
-    _property_string(stop_join_data, code),
-    _property_end()
+struct AliasSetReq_t {
+    char id[12];
+    char *version;
+    char *method;
+    char *alias;
 };
+extern const struct reflect_reflection AliasSetReq_reflection[];
 
-typedef struct {
-    char*                       version;
-    char*                       flowDirection;
-    char*                       controlType;
-    char*                       messageType;
-    char*                       vendor;
-    char*                       timestamp;
-    char*                       sequence;
-    size_t                      dataNum;   
-    stop_join_data*            data;    
-} stop_join;
-
-reflect_item_t stop_join_ref[] = {
-    _property_string(stop_join, version),
-    _property_string(stop_join, flowDirection),
-    _property_string(stop_join, controlType),
-    _property_string(stop_join, messageType),
-    _property_string(stop_join, vendor),
-    _property_string(stop_join, timestamp),
-    _property_string(stop_join, sequence),
-    _property_int_ex(stop_join, dataNum, _ex_args_all),
-    _property_array_object(stop_join, data, stop_join_data_ref, 
-                            stop_join_data, dataNum),
-    _property_end()
+struct OtaInform_t {
+    char id[12];
+    const char *version;
+    const char *module;
 };
+extern const struct reflect_reflection OtaInform_reflection[];
 
-/*******************************END**********************************************/
-
-/*******************************BEGIN: 局域网扫描入网报文********************************/
-typedef struct {
-    // ⼦设备模型编码
-    char*       join_model;
-} scan_join_value;
-
-reflect_item_t scan_join_value_ref[] = {
-    _property_string(scan_join_value, join_model),
-    _property_end()
+struct OtaUpgrade_t {
+    char id[12];
+    char *version;
+    char *module;
+    char *url;
+    char *md5;
+    long long size;
+    struct KeyValuePair_t *params;
+    int count;
 };
+extern const struct reflect_reflection OtaUpgrade_reflection[];
 
-typedef struct {
-    char*               model;
-    char*               parentDeviceId;
-    char*               deviceId;
-    char*               code;
-    scan_join_value*   value;
-} scan_join_data;
-
-reflect_item_t scan_join_data_ref[] = {
-    _property_string(scan_join_data, model),
-    _property_string(scan_join_data, parentDeviceId),
-    _property_string(scan_join_data, deviceId),
-    _property_string(scan_join_data, code),
-    _property_obj(scan_join_data, value, scan_join_value_ref),
-    _property_end()
+struct OtaProgress_t {
+    char id[12];
+    char *module;
+    int step;
+    const char *desc;
 };
+extern const struct reflect_reflection OtaProgress_reflection[];
 
-typedef struct {
-    char*                       version;
-    char*                       flowDirection;
-    char*                       controlType;
-    char*                       messageType;
-    char*                       vendor;
-    char*                       timestamp;
-    char*                       sequence;
-    size_t                      dataNum;   
-    scan_join_data*            data;    
-} scan_join;
-
-reflect_item_t scan_join_ref[] = {
-    _property_string(scan_join, version),
-    _property_string(scan_join, flowDirection),
-    _property_string(scan_join, controlType),
-    _property_string(scan_join, messageType),
-    _property_string(scan_join, vendor),
-    _property_string(scan_join, timestamp),
-    _property_string(scan_join, sequence),
-    _property_int_ex(scan_join, dataNum, _ex_args_all),
-    _property_array_object(scan_join, data, scan_join_data_ref, 
-                            scan_join_data, dataNum),
-    _property_end()
+struct OtaFirmwareGetReq_t {
+    char id[12];
+    char *version;
+    char *method;
+    char *module;
 };
+extern const struct reflect_reflection OtaFirmwareGetReq_reflection[];
 
-/*******************************END**********************************************/
-
-/*******************************BEGIN: 获取子设备列表报文********************************/
-typedef struct {
-    char*               model;
-    char*               parentDeviceId;
-    char*               deviceId;
-    char*               code;
-} child_list_req_data;
-
-typedef struct {
-    char*       model;
-    char*       room;
-    char*       name;
-    char*       parentDeviceId;
-    char*       deviceId;
-    char*       code;
-    char*       value;
-} child_list_rsp_data;
-
-reflect_item_t scan_join_data_ref[] = {
-    _property_string(scan_join_data, model),
-    _property_string(scan_join_data, parentDeviceId),
-    _property_string(scan_join_data, deviceId),
-    _property_string(scan_join_data, code),
-    _property_obj(scan_join_data, value, scan_join_value_ref),
-    _property_end()
+struct CommonRes_t {
+    char id[12];
+    int code;
 };
+extern const struct reflect_reflection CommonRes_reflection[];
 
-typedef struct {
-    char*                       version;
-    char*                       flowDirection;
-    char*                       controlType;
-    char*                       messageType;
-    char*                       vendor;
-    char*                       timestamp;
-    char*                       sequence;
-    size_t                      dataNum;   
-    scan_join_data*            data;    
-} scan_join;
-
-reflect_item_t scan_join_ref[] = {
-    _property_string(scan_join, version),
-    _property_string(scan_join, flowDirection),
-    _property_string(scan_join, controlType),
-    _property_string(scan_join, messageType),
-    _property_string(scan_join, vendor),
-    _property_string(scan_join, timestamp),
-    _property_string(scan_join, sequence),
-    _property_int_ex(scan_join, dataNum, _ex_args_all),
-    _property_array_object(scan_join, data, scan_join_data_ref, 
-                            scan_join_data, dataNum),
-    _property_end()
+struct RegisterData_t {
+    char *productKey;
+    char *deviceName;
+    char *deviceSecret;
 };
+extern const struct reflect_reflection RegisterData_reflection[];
 
-/*******************************END**********************************************/
+struct DeviceRegisterRes_t {
+    int code;
+    struct RegisterData_t device;
+};
+extern const struct reflect_reflection DeviceRegisterRes_reflection[];
 
+struct SubDeviceRegisterRes_t {
+    char id[12];
+    int code;
+    struct RegisterData_t *data;
+    int count;
+};
+extern const struct reflect_reflection SubDeviceRegisterRes_reflection[];
 
-/**
- * 构造在线/离线报文
-*/
-msg_online* buildOnlineOffline(struct Instance *instance, bool online);
+struct DeviceData_t {
+    char *productKey;
+    char *deviceName;
+	char *alias;
+};
+extern const struct reflect_reflection DeviceData_reflection[];
+struct DeviceList_t {
+    char id[12];
+    int code;
+    struct DeviceData_t *data;
+    int count;
+};
+extern const struct reflect_reflection DeviceList_reflection[];
 
-#endif
+struct KeyValueData_t {
+    char *key;
+    char *value;
+};
+extern const struct reflect_reflection KeyValueData_reflection[];
+
+struct ServiceCallRes_t {
+    char id[12];
+    int code;
+    struct KeyValueData_t *data;
+    int count;
+};
+extern const struct reflect_reflection ServiceCallRes_reflection[];
+
+struct OtaFirmwareGetRes_t {
+    char id[12];
+    char *version;
+    char *module;
+    char *url;
+    char *md5;
+    int size;
+};
+extern const struct reflect_reflection OtaFirmwareGetRes_reflection[];
