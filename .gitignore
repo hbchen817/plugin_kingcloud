@@ -22,4 +22,4 @@ _int_x86_64/
 yarn.lock
 mock
 bak
-
+*.code-workspace
