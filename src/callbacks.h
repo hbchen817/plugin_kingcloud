@@ -72,6 +72,8 @@ int handle_service_leave_zigbee_network_reply(int id, int code, void *data);
 int handle_service_start_permit_join(const char *topic, const char *message, int length, void *context);
 int handle_service_start_permit_join_reply(int id, int code, void *data);
 
+int handle_service_stop_permit_join(const char *topic, const char *message, int length, void *context);
+
 int handle_service_create_scene(const char *topic, const char *message, int length, void *context);
 int handle_service_delete_scene(const char *topic, const char *message, int length, void *context);
 int handle_service_trigger_scene(const char *topic, const char *message, int length, void *context);
@@ -91,6 +93,6 @@ int handle_ota_request_reply();
 int handle_dev_ota_request(const char *topic, const char *message, int length, void *context);
 
 // 4.1.3 设备上报升级进度
-int handle_ota_progress(int id, int code, void *data);
+int handle_ota_progress(int id, int code);
 int handle_ota_progress_reply(const char *topic, const char *message, int length, void *context);
 int handle_dev_ota_progress(int id, int code, void *data);

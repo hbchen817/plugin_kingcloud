@@ -82,7 +82,7 @@ int rex_notify(RexMessage_t *msg) {
         } else {
             switch (msg->type) {
             case MSG_TYPE_OTA_EVENT:
-                iter->val0(msg->sequence, msg->u.otaProgressMsg.step, iter->val1);
+                iter->val0(msg->sequence, 0, iter->val1);
                 break;
             case MSG_TYPE_EXECUTE_RESULT:
                 iter->val0(msg->sequence, msg->u.resultMsg.result, iter->val1);
@@ -91,6 +91,9 @@ int rex_notify(RexMessage_t *msg) {
                 iter->val0(msg->sequence, 0, iter->val1);
                 break;
             }
+
+            // 应该删除对应seq，不然内存爆炸
+            map_request_erase(iter);
         }
     } else {
         switch (msg->type) {
@@ -157,6 +160,8 @@ int rex_notify(RexMessage_t *msg) {
             }
             break;
         case MSG_TYPE_OTA_EVENT:
+            handle_ota_progress(msg->sequence, msg->u.otaProgressMsg.step);
+            break;
         case MSG_TYPE_SERVICE:        // 服务类型
         case MSG_TYPE_EXECUTE_RESULT: // 执行结果
         default:

@@ -157,7 +157,7 @@ static int do_mqtt_start(struct MqttInstance *mqtt) {
     MQTTAsync_connectOptions options     = MQTTAsync_connectOptions_initializer_;
     config_func_t           *config      = &g_config.gw_logout;
     any_t                    topic_value = {.type = kUnknown};
-    char                     payload_str[256];
+    char                     payload_str[512];
     if (config->enable && config->req_topic != NULL) {
         any_t topic_pattern = {.type = kUnknown};
         any_set_const_string(&topic_pattern, config->req_topic);

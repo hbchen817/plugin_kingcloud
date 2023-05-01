@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 any_t any_from_yaml_node(yaml_document_t *doc, yaml_node_t *node);
 

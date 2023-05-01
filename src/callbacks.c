@@ -20,7 +20,7 @@ static int common_mqtt_publish(const char *topic_pattern_str, any_t payload_patt
         any_free(&topic_value);
         return ERR_CONFIG_MALFORMED;
     }
-    char payload_str[256];
+    char payload_str[512];
     if (format_from_context(payload_str, sizeof(payload_str), payload_pattern, context) < 0) {
         any_free(&topic_value);
         return ERR_CONFIG_MALFORMED;
@@ -206,6 +206,19 @@ int handle_topo_leave(const char *productKey, const char *deviceName) {
     map_any *context = map_any_create();
     map_any_insert(context, NAME_DEV_PRODUCT_KEY, any_from_const_string(productKey));
     map_any_insert(context, NAME_DEV_DEVICE_NAME, any_from_const_string(deviceName));
+    map_any_insert(context, "version", any_from_const_string("2.0"));
+    map_any_insert(context, "flowDirection", any_from_const_string("1"));
+    map_any_insert(context, "controlType", any_from_const_string(""));
+    map_any_insert(context, "messageType", any_from_const_string("unbind"));
+    char timestamp[64];
+    memset(timestamp, 0, sizeof(timestamp));
+    get_time_str(timestamp);
+    map_any_insert(context, "timestamp", any_from_const_string(timestamp));
+    map_any_insert(context, "parentDeviceId", any_from_const_string(""));
+    map_any_insert(context, "deviceId", any_from_const_string(deviceName));
+    map_any_insert(context, "code", any_from_const_string(""));
+    map_any_insert(context, "value", any_from_const_string(""));
+    
     int ret = common_mqtt_publish(config->req_topic, config->req_payload, context);
     map_any_destroy_ex(context);
     if (ret == ERR_SUCCESS && config->res_topic == NULL) {
@@ -331,6 +344,20 @@ int handle_sub_login(const char *productKey, const char *deviceName) {
     map_any *context = map_any_create();
     map_any_insert(context, NAME_DEV_PRODUCT_KEY, any_from_const_string(productKey));
     map_any_insert(context, NAME_DEV_DEVICE_NAME, any_from_const_string(deviceName));
+    map_any_insert(context, "version", any_from_const_string("2.0"));
+    map_any_insert(context, "flowDirection", any_from_const_string("1"));
+    map_any_insert(context, "controlType", any_from_const_string(""));
+    map_any_insert(context, "messageType", any_from_const_string("bind"));
+    char timestamp[64];
+    memset(timestamp, 0, sizeof(timestamp));
+    get_time_str(timestamp);
+    map_any_insert(context, "timestamp", any_from_const_string(timestamp));
+    map_any_insert(context, "parentDeviceId", any_from_const_string(""));
+    map_any_insert(context, "deviceId", any_from_const_string(deviceName));
+    map_any_insert(context, "name", any_from_const_string(deviceName));
+    map_any_insert(context, "code", any_from_const_string(""));
+    map_any_insert(context, "value", any_from_const_string(""));
+
     int ret = common_mqtt_publish(config->req_topic, config->req_payload, context);
     map_any_destroy_ex(context);
     return ret;
@@ -775,9 +802,55 @@ int handle_service_reply(int id, int code, void *data) {
     if (code != 0) {
         code += 3000;
     }
-    any_t code_value = {.type = kInteger, .u = {.ival = code}};
-    map_any_insert(params, "CODE", code_value);
-    map_any_iterator *iter = map_any_find(params, "_CONFIG");
+    char code_str[16] = {0};
+    sprintf(code_str, "%d", code);
+
+    map_any_iterator *iter = map_any_find(params, "flowDirection");
+    if (iter == NULL) {
+        map_any_insert(params, "flowDirection", any_from_const_string("1"));
+    } else {
+        any_set_const_string(&iter->val0, "1");
+    }
+
+    iter = map_any_find(params, "controlType");
+    if (iter == NULL) {
+        map_any_insert(params, "controlType", any_from_const_string(""));
+    } else {
+        any_set_const_string(&iter->val0, "");
+    }
+
+    iter = map_any_find(params, "messageType");
+    if (iter == NULL) {
+        map_any_insert(params, "messageType", any_from_const_string("ack"));
+    } else {
+        any_set_const_string(&iter->val0, "ack");
+    }
+
+    iter = map_any_find(params, "code");
+    if (iter == NULL) {
+        map_any_insert(params, "code", any_from_const_string("ack"));
+    } else {
+        any_set_const_string(&iter->val0, "ack");
+    }
+
+    iter = map_any_find(params, "value");
+    if (iter == NULL) {
+        map_any_insert(params, "value", any_from_const_string(code_str));
+    } else {
+        any_set_const_string(&iter->val0, code_str);
+    }
+
+    char timestamp[64];
+    memset(timestamp, 0, sizeof(timestamp));
+    get_time_str(timestamp);
+    iter = map_any_find(params, "timestamp");
+    if (iter == NULL) {
+        map_any_insert(params, "timestamp", any_from_const_string(timestamp));
+    } else {
+        any_set_const_string(&iter->val0, timestamp);
+    }
+
+    iter = map_any_find(params, "_CONFIG");
     if (iter != NULL) {
         config_func_t *config = iter->val0.u.cval;
         if (config && config->enable && config->res_topic != NULL) {
@@ -860,34 +933,18 @@ int handle_service_start_permit_join(const char *topic, const char *message, int
     config_func_t *config = &g_config.start_permit_join;
     map_any       *params = map_any_create();
     common_mqtt_subscribe(topic, message, length, config->req_topic, config->req_payload, params);
-    int               paramCount  = 0;
-    map_any          *call_params = map_any_create();
-    map_any_iterator *iter        = map_any_find(params, NAME_COMMON_PARAM_NAME);
-    map_any_iterator *val_iter    = map_any_find(params, NAME_COMMON_PARAM_VALUE);
-    if (iter != NULL && val_iter != NULL) {
-        if (any_is_valid_string(&iter->val0)) {
-            paramCount = 1;
-            map_any_insert(call_params, iter->val0.u.sval, any_duplicate(&val_iter->val0));
-        } else if (any_is_sequence(&iter->val0) && any_is_sequence(&val_iter->val0) && any_length(&iter->val0) == any_length(&val_iter->val0)) {
-            for (int i = 0; i < any_length(&iter->val0); i++) {
-                if (any_is_valid_string(&iter->val0.u.aval[i])) {
-                    map_any_insert(call_params, iter->val0.u.aval[i].u.sval, any_duplicate(&val_iter->val0.u.aval[i]));
-                    paramCount++;
-                }
-            }
-        }
-    }
+
     RexCommand_t cmd;
     memset(&cmd, 0, sizeof(RexCommand_t));
     cmd.sequence               = get_sequence();
     cmd.type                   = CMD_PAIR;
     cmd.u.pairCommand.duration = 30;
     bool need_free             = false;
-    for (map_any_iterator *iter = map_any_first(call_params); iter != NULL; iter = map_any_next(iter)) {
-        if (strcmp(iter->key, "duration") == 0) {
-            if (any_is_integer(&iter->val0)) {
-                cmd.u.pairCommand.duration = (int)iter->val0.u.ival;
-            }
+    for (map_any_iterator *iter = map_any_first(params); iter != NULL; iter = map_any_next(iter)) {
+        if (strcmp(iter->key, "join_second") == 0) {
+            int duration = 0;
+            sscanf(iter->val0.u.sval, "%d", &duration);
+            cmd.u.pairCommand.duration = duration;
         } else if (strcmp(iter->key, "installCode") == 0) {
             if (any_is_valid_string(&iter->val0)) {
                 if (any_length(&iter->val0) < sizeof(cmd.u.pairCommand.installCode)) {
@@ -930,11 +987,10 @@ int handle_service_start_permit_join(const char *topic, const char *message, int
             }
         }
     }
-    map_any_destroy_ex(call_params);
     int ret = instance.processCmd(instance.context, &cmd);
     if (ret != 0) {
         log_error("call processCmd %d", ret);
-        handle_service_reply(cmd.sequence, ret, NULL);
+        handle_service_reply(cmd.sequence, ret, params);
     } else {
         any_t configVal = {.type = kCustom, .u = {.cval = config}};
         map_any_insert(params, "_CONFIG", configVal);
@@ -948,6 +1004,28 @@ int handle_service_start_permit_join(const char *topic, const char *message, int
 
 int handle_service_start_permit_join_reply(int id, int code, void *data) {
     return handle_service_reply(id, code, data);
+}
+
+int handle_service_stop_permit_join(const char *topic, const char *message, int length, void *context) {
+    log_info("%s %s: %.*s", __FUNCTION__, topic, length, message);
+    config_func_t *config = &g_config.stop_permit_join;
+    map_any       *params = map_any_create();
+    common_mqtt_subscribe(topic, message, length, config->req_topic, config->req_payload, params);
+
+    RexCommand_t cmd;
+    memset(&cmd, 0, sizeof(RexCommand_t));
+    cmd.sequence               = get_sequence();
+    cmd.type                   = CMD_ABORT_PAIRING;
+    int ret = instance.processCmd(instance.context, &cmd);
+    if (ret != 0) {
+        log_error("call processCmd %d", ret);
+        handle_service_reply(cmd.sequence, ret, params);
+    } else {
+        any_t configVal = {.type = kCustom, .u = {.cval = config}};
+        map_any_insert(params, "_CONFIG", configVal);
+        map_request_insert(instance.requests, cmd.sequence, handle_service_reply, params);
+    }
+    return 1;
 }
 
 int handle_service_create_scene(const char *topic, const char *message, int length, void *context) {
@@ -1233,7 +1311,7 @@ int handle_ota_request(const char *topic, const char *message, int length, void 
     config_func_t *config = &g_config.ota_request;
     map_any       *params = map_any_create();
     common_mqtt_subscribe(topic, message, length, config->req_topic, config->req_payload, params);
-    map_any_iterator *iter = map_any_find(params, NAME_COMMON_OTA_URL);
+    map_any_iterator *iter = map_any_find(params, "value");
     if (iter != NULL && any_is_valid_string(&iter->val0) && iter->val0.u.sval != NULL) {
         RexCommand_t cmd;
         memset(&cmd, 0, sizeof(RexCommand_t));
@@ -1243,9 +1321,9 @@ int handle_ota_request(const char *topic, const char *message, int length, void 
         int ret = instance.processCmd(instance.context, &cmd);
         if (ret != 0) {
             log_error("call processCmd %d", ret);
-            handle_ota_progress(cmd.sequence, -1, params);
+            handle_service_reply(cmd.sequence, -1, params);
         } else {
-            map_request_insert(instance.requests, cmd.sequence, handle_ota_progress, params);
+            map_request_insert(instance.requests, cmd.sequence, handle_service_reply, params);
         }
     }
     return 1;
@@ -1281,24 +1359,28 @@ int handle_ota_request_reply() {
 }
 
 // 4.1.3 设备上报升级进度
-int handle_ota_progress(int id, int code, void *data) {
+int handle_ota_progress(int id, int code) {
     config_func_t *config = &g_config.ota_progress;
     if (!config->enable || config->req_topic == NULL) {
-        map_any_destroy_ex(data);
         return ERR_SUCCESS;
     }
-    map_any *req_context = (map_any *)data;
+
     map_any *context     = map_any_create();
-    for (map_any_iterator *iter = map_any_first(req_context); iter != NULL; iter = map_any_next(iter)) {
-        map_any_insert(context, iter->key, any_duplicate(&iter->val0));
-    }
-    map_any_insert(context, NAME_COMMON_OTA_STEP, any_from_int(code));
-    map_any_insert(context, NAME_COMMON_OTA_DESC, any_from_const_string(""));
+    map_any_insert(context, "version", any_from_const_string("2.0"));
+    map_any_insert(context, "flowDirection", any_from_const_string("1"));
+    map_any_insert(context, "controlType", any_from_const_string(""));
+    map_any_insert(context, "messageType", any_from_const_string("ota"));
+    char timestamp[64];
+    memset(timestamp, 0, sizeof(timestamp));
+    get_time_str(timestamp);
+    map_any_insert(context, "timestamp", any_from_const_string(timestamp));
+    map_any_insert(context, "parentDeviceId", any_from_const_string(""));
+    map_any_insert(context, "code", any_from_const_string("percentage"));
+    char value[8] = {0};
+    sprintf(value, "%d", code);
+    map_any_insert(context, "value", any_from_const_string(value));
     int ret = common_mqtt_publish(config->req_topic, config->req_payload, context);
     map_any_destroy_ex(context);
-    if ((code < 0 || code >= 100) && data) {
-        map_any_destroy_ex(req_context);
-    }
     return ret;
 }
 

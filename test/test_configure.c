@@ -1290,21 +1290,6 @@ int leave_zigbee_network() {
     return fail;
 }
 
-
-void get_current_time_ms(char *buf) {
-    struct timespec ts;
-
-    if (buf == NULL) {
-        return;
-    }
-
-    if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
-        return;
-    }
-
-    snprintf(buf, 32, "%lld", (long long)(ts.tv_sec) * 1000 + (long long)(ts.tv_nsec / 1000000));
-}
-
 int start_permit_join() {
     int            fail          = 0;
     map_any       *params        = map_any_create();
@@ -1328,6 +1313,16 @@ int start_permit_join() {
                     "value":{
                         "join_second":"90",
                         "join_type":"zigbee"
+                    }
+                },
+                {
+                    "model":"REXENSE_TEST_002",
+                    "parentDeviceId":"",
+                    "deviceId":"REXENSE.TEST.001.003",
+                    "code":"start_zigbee_join",
+                    "value":{
+                        "join_second":"60",
+                        "join_type":"wlan"
                     }
                 }
             ]
@@ -1360,6 +1355,31 @@ int start_permit_join() {
             fail = 1;
             break;
         }
+
+        map_any          *call_params = map_any_create();
+        map_any_iterator *iter        = map_any_find(params, "join_second");
+        map_any_iterator *val_iter    = map_any_find(params, "join_type");
+        int               paramCount  = 0;
+        if (iter != NULL && val_iter != NULL) {
+            if (any_is_valid_string(&iter->val0)) {
+                paramCount = 1;
+                map_any_insert(call_params, iter->val0.u.sval, any_duplicate(&val_iter->val0));
+            } else if (any_is_sequence(&iter->val0) && any_is_sequence(&val_iter->val0) && any_length(&iter->val0) == any_length(&val_iter->val0)) {
+                for (int i = 0; i < any_length(&iter->val0); i++) {
+                    if (any_is_valid_string(&iter->val0.u.aval[i])) {
+                        map_any_insert(call_params, iter->val0.u.aval[i].u.sval, any_duplicate(&val_iter->val0.u.aval[i]));
+                        paramCount++;
+                    }
+                }
+            }
+        }
+        for (map_any_iterator *iter = map_any_first(call_params); iter != NULL; iter = map_any_next(iter)) {
+            char *str = any_to_json_str(&iter->val0);
+            fprintf(stdout, "\t%s -----> %s\n", iter->key, str);
+            free(str);
+        }
+        map_any_destroy_ex(call_params);
+
         for (map_any_iterator *iter = map_any_first(params); iter != NULL; iter = map_any_next(iter)) {
             char *str = any_to_json_str(&iter->val0);
             fprintf(stdout, "\t%s -> %s\n", iter->key, str);
@@ -1417,7 +1437,7 @@ int start_permit_join() {
             }
             char timestamp[64];
             memset(timestamp, 0, sizeof(timestamp));
-            get_current_time_ms(timestamp);
+            get_time_str(timestamp);
             map_any_insert(params, "timestamp", any_from_const_string(timestamp));
             
             char payload[512];

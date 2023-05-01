@@ -4,12 +4,12 @@ functionality:
       request:
         topic: ${gwVC}/${gwMD}/${gwDN}/message/up
         payload:
-          version: ${}
-          flowDirection: ${}
-          controlType: ${}
-          messageType: ${}
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
           vendor: ${gwVC}
-          timestamp: ${}
+          timestamp: ${timestamp}
           sequence: ${IOTA}
           data:
             - productKey: ${devPK}
@@ -54,42 +54,36 @@ functionality:
         CODE: 0
     topo_join:
       request:
-        topic: /sys/${gwPK}/${gwDN}/thing/topo/add
+        topic: ${gwVC}/${gwMD}/${gwDN}/message/up
         payload:
-          id: ${IOTA}
-          params:
-            - productKey: ${devPK}
-              deviceName: ${devDN}
-      response:
-        topic: /sys/${gwPK}/${gwDN}/thing/topo/add_reply
-        payload:
-          id: ${ID}
-          code: ${CODE}
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${gwVC}
+          timestamp: ${timestamp}
+          sequence: ${IOTA}
           data:
-            - productKey: ${devPK}
-              deviceName: ${devDN}
-      match: ["id"]
-      success:
-        CODE: 0
+            - model: ${gwMD}
+              parentDeviceId: ${parentDeviceId}
+              name: ${name}
+              code: "${code}"
     topo_leave:
       request:
-        topic: /sys/${gwPK}/${gwDN}/thing/topo/delete
+        topic: ${gwVC}/${gwMD}/${gwDN}/message/up
         payload:
-          id: ${IOTA}
-          params:
-            - productKey: ${devPK}
-              deviceName: ${devDN}
-      response:
-        topic: /sys/${gwPK}/${gwDN}/thing/topo/delete_reply
-        payload:
-          id: ${ID}
-          code: ${CODE}
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${gwVC}
+          timestamp: ${timestamp}
+          sequence: ${IOTA}
           data:
-            - productKey: ${devPK}
-              deviceName: ${devDN}
-      match: ["id"]
-      success:
-        CODE: 0
+            - model: ${gwMD}
+              parentDeviceId: ${parentDeviceId}
+              name: ${name}
+              code: "${code}"
     topo_delete:
       request:
         topic: /sys/${gwPK}/${gwDN}/thing/topo/change
@@ -191,6 +185,38 @@ functionality:
               deviceId: ${deviceId}
               code: ${code}
               value: ${value}
+    stop_permit_join:
+      request:
+        topic: ${gwVC}/${gwMD}/${gwDN}/command/down
+        payload:
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${vendor}
+          timestamp: ${timestamp}
+          sequence: ${sequence}
+          data:
+            - model: ${model}
+              parentDeviceId: ${parentDeviceId}
+              deviceId: ${deviceId}
+              code: ${code}
+      response:
+        topic: ${gwVC}/${gwMD}/${gwDN}/command/ack
+        payload:
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${vendor}
+          timestamp: ${timestamp}
+          sequence: ${sequence}
+          data:
+            - model: ${model}
+              parentDeviceId: ${parentDeviceId}
+              deviceId: ${deviceId}
+              code: ${code}
+              value: ${value}
     create_scene:
       request:
         topic: /sys/${gwPK}/${gwDN}/thing/service/scene_create_update
@@ -274,17 +300,56 @@ functionality:
         CODE: 0
     ota_request:
       request:
-        topic: /sys/${gwPK}/${gwDN}/ota/device/upgrade
+        topic: ${gwVC}/${gwMD}/${gwDN}/command/down
         payload:
-          id: ${ID}
-          url: ${URL}
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${vendor}
+          timestamp: ${timestamp}
+          sequence: ${sequence}
+          data:
+            - model: ${model}
+              parentDeviceId: ${parentDeviceId}
+              deviceId: ${deviceId}
+              version: ${version}
+              type: ${type}
+              code: ${code}
+              value: ${value}
+      response:
+        topic: ${gwVC}/${gwMD}/${gwDN}/command/ack
+        payload:
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${vendor}
+          timestamp: ${timestamp}
+          sequence: ${sequence}
+          data:
+            - model: ${model}
+              parentDeviceId: ${parentDeviceId}
+              deviceId: ${deviceId}
+              code: ${code}
+              value: ${value}
     ota_progress:
       request:
-        topic: /sys/${gwPK}/${gwDN}/ota/device/progress
+        topic: ${gwVC}/${gwMD}/${gwDN}/message/up
         payload:
-          id: ${ID}
-          step: ${OTA_STEP}
-          desc: ${OTA_DESC}
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${vendor}
+          timestamp: ${timestamp}
+          sequence: ${sequence}
+          data:
+            - model: ${model}
+              parentDeviceId: ${parentDeviceId}
+              deviceId: ${gwDN}
+              code: ${code}
+              value: ${value}
   device:
     dev_login:
       request:

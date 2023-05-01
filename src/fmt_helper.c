@@ -1,6 +1,7 @@
 #include "message.h"
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
 
 int fmt_RexValue(char *buf, int len, const RexValue_t *v) {
     if (len == 0) {
@@ -247,4 +248,11 @@ int fmt_RexMessage(char *buf, int len, const RexMessage_t *v) {
         break;
     }
     return ptr;
+}
+
+void get_time_str(char *buf) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    long ms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+    sprintf(buf, "%ld", ms);
 }
