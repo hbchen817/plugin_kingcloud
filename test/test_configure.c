@@ -14,12 +14,23 @@ const char *get_gateway_device_name() {
     return "70B3D50580AB68DB";
 }
 
+const char *get_gateway_vendor_code() {
+    return "R101Gateway";
+}
+
+const char *get_gateway_hex_model_id() {
+    return "R101_Gateway";
+}
+
 static int sequence = 1;
 int        get_sequence() {
     return atomic_fetch_add(&sequence, 1);
 }
 
 #define NODE_GW_REGISTER           "gw_register"
+#define NODE_GW_MESSAGE            "gw_message_up"
+#define NODE_GW_COMMAND            "gw_command"
+#define NODE_GW_OTA                "gw_ota"
 #define NODE_DEV_REGISTER          "dev_register"
 #define NODE_GW_LOGIN              "gw_login"
 #define NODE_GW_LOGOUT             "gw_logout"
@@ -58,6 +69,214 @@ typedef int (*TEST_FUNC)();
 int gw_register() {
     return 0;
 }
+
+int gw_command() {
+    int            fail          = 0;
+    map_any       *params        = map_any_create();
+    any_t          topic_pattern = {.type = kUnknown};
+    char           topic[256];
+    char           payload[256];
+    config_func_t *config     = &g_config.gw_command;
+    const char    *payloads[] = {R"({"id":11,"code":0})"};
+    for (int i = 0; i < 1; i++) {
+        fprintf(stdout, "\n");
+        while (map_any_first(params) != NULL) {
+            map_any_iterator *iter = map_any_first(params);
+            any_free(&iter->val0);
+            map_any_erase(iter);
+        }
+        int ret = format_string_from_context(topic, sizeof(topic), config->req_topic, NULL);
+        if (ret < 0) {
+            fprintf(stderr, "[ERR] %s %d failed\n", __FUNCTION__, __LINE__);
+            fail = 1;
+            break;
+        }
+        fprintf(stdout, "%s: %s\n", __FUNCTION__, topic);
+        map_any_insert(params, "devPK", any_from_const_string("R204040SJKG"));
+        map_any_insert(params, "devDN", any_from_const_string("70B3D50580019679"));
+        ret = format_from_context(payload, sizeof(payload), config->req_payload, params);
+        if (ret < 0) {
+            fprintf(stderr, "[ERR] %s %d failed %d\n", __FUNCTION__, __LINE__, ret);
+            fail = 1;
+            break;
+        }
+        fprintf(stdout, "%s: %s\n", __FUNCTION__, payload);
+        if (config->res_topic != NULL) {
+            ret = format_string_from_context(topic, sizeof(topic), config->res_topic, NULL);
+            if (ret < 0) {
+                fprintf(stderr, "[ERR] %s %d failed\n", __FUNCTION__, __LINE__);
+                fail = 1;
+                break;
+            }
+            fprintf(stdout, "%s: %s\n", __FUNCTION__, topic);
+            while (map_any_first(params) != NULL) {
+                map_any_iterator *iter = map_any_first(params);
+                any_free(&iter->val0);
+                map_any_erase(iter);
+            }
+            any_set_const_string(&topic_pattern, config->res_topic);
+            ret = parse_from_plain_buffer(topic, strlen(topic), topic_pattern, params);
+            if (ret != ERR_SUCCESS) {
+                fprintf(stderr, "[ERR] %s %d failed %d\n", __FUNCTION__, __LINE__, ret);
+                fail = 1;
+                break;
+            }
+            ret = parse_from_yaml_buffer(payloads[i], strlen(payloads[i]), config->res_payload, params);
+            if (ret != ERR_SUCCESS) {
+                fprintf(stderr, "[ERR] %s %d %s failed %d\n", __FUNCTION__, __LINE__, payloads[i], ret);
+                fail = 1;
+                break;
+            }
+            for (map_any_iterator *iter = map_any_first(params); iter != NULL; iter = map_any_next(iter)) {
+                char *str = any_to_json_str(&iter->val0);
+                fprintf(stdout, "\t%s -> %s\n", iter->key, str);
+                free(str);
+            }
+        }
+    }
+    any_free(&topic_pattern);
+    map_any_destroy_ex(params);
+    return fail;
+}
+
+int gw_message_up() {
+    int            fail          = 0;
+    map_any       *params        = map_any_create();
+    any_t          topic_pattern = {.type = kUnknown};
+    char           topic[256];
+    char           payload[256];
+    config_func_t *config     = &g_config.gw_message_up;
+    const char    *payloads[] = {R"({"id":11,"code":0})"};
+    for (int i = 0; i < 1; i++) {
+        fprintf(stdout, "\n");
+        while (map_any_first(params) != NULL) {
+            map_any_iterator *iter = map_any_first(params);
+            any_free(&iter->val0);
+            map_any_erase(iter);
+        }
+        int ret = format_string_from_context(topic, sizeof(topic), config->req_topic, NULL);
+        if (ret < 0) {
+            fprintf(stderr, "[ERR] %s %d failed\n", __FUNCTION__, __LINE__);
+            fail = 1;
+            break;
+        }
+        fprintf(stdout, "%s: %s\n", __FUNCTION__, topic);
+        map_any_insert(params, "devPK", any_from_const_string("R204040SJKG"));
+        map_any_insert(params, "devDN", any_from_const_string("70B3D50580019679"));
+        ret = format_from_context(payload, sizeof(payload), config->req_payload, params);
+        if (ret < 0) {
+            fprintf(stderr, "[ERR] %s %d failed %d\n", __FUNCTION__, __LINE__, ret);
+            fail = 1;
+            break;
+        }
+        fprintf(stdout, "%s: %s\n", __FUNCTION__, payload);
+        if (config->res_topic != NULL) {
+            ret = format_string_from_context(topic, sizeof(topic), config->res_topic, NULL);
+            if (ret < 0) {
+                fprintf(stderr, "[ERR] %s %d failed\n", __FUNCTION__, __LINE__);
+                fail = 1;
+                break;
+            }
+            fprintf(stdout, "%s: %s\n", __FUNCTION__, topic);
+            while (map_any_first(params) != NULL) {
+                map_any_iterator *iter = map_any_first(params);
+                any_free(&iter->val0);
+                map_any_erase(iter);
+            }
+            any_set_const_string(&topic_pattern, config->res_topic);
+            ret = parse_from_plain_buffer(topic, strlen(topic), topic_pattern, params);
+            if (ret != ERR_SUCCESS) {
+                fprintf(stderr, "[ERR] %s %d failed %d\n", __FUNCTION__, __LINE__, ret);
+                fail = 1;
+                break;
+            }
+            ret = parse_from_yaml_buffer(payloads[i], strlen(payloads[i]), config->res_payload, params);
+            if (ret != ERR_SUCCESS) {
+                fprintf(stderr, "[ERR] %s %d %s failed %d\n", __FUNCTION__, __LINE__, payloads[i], ret);
+                fail = 1;
+                break;
+            }
+            for (map_any_iterator *iter = map_any_first(params); iter != NULL; iter = map_any_next(iter)) {
+                char *str = any_to_json_str(&iter->val0);
+                fprintf(stdout, "\t%s -> %s\n", iter->key, str);
+                free(str);
+            }
+        }
+    }
+    any_free(&topic_pattern);
+    map_any_destroy_ex(params);
+    return fail;
+}
+
+int gw_ota() {
+    int            fail          = 0;
+    map_any       *params        = map_any_create();
+    any_t          topic_pattern = {.type = kUnknown};
+    char           topic[256];
+    char           payload[256];
+    config_func_t *config     = &g_config.gw_ota;
+    const char    *payloads[] = {R"({"id":11,"code":0})"};
+    for (int i = 0; i < 1; i++) {
+        fprintf(stdout, "\n");
+        while (map_any_first(params) != NULL) {
+            map_any_iterator *iter = map_any_first(params);
+            any_free(&iter->val0);
+            map_any_erase(iter);
+        }
+        int ret = format_string_from_context(topic, sizeof(topic), config->req_topic, NULL);
+        if (ret < 0) {
+            fprintf(stderr, "[ERR] %s %d failed\n", __FUNCTION__, __LINE__);
+            fail = 1;
+            break;
+        }
+        fprintf(stdout, "%s: %s\n", __FUNCTION__, topic);
+        map_any_insert(params, "devPK", any_from_const_string("R204040SJKG"));
+        map_any_insert(params, "devDN", any_from_const_string("70B3D50580019679"));
+        ret = format_from_context(payload, sizeof(payload), config->req_payload, params);
+        if (ret < 0) {
+            fprintf(stderr, "[ERR] %s %d failed %d\n", __FUNCTION__, __LINE__, ret);
+            fail = 1;
+            break;
+        }
+        fprintf(stdout, "%s: %s\n", __FUNCTION__, payload);
+        if (config->res_topic != NULL) {
+            ret = format_string_from_context(topic, sizeof(topic), config->res_topic, NULL);
+            if (ret < 0) {
+                fprintf(stderr, "[ERR] %s %d failed\n", __FUNCTION__, __LINE__);
+                fail = 1;
+                break;
+            }
+            fprintf(stdout, "%s: %s\n", __FUNCTION__, topic);
+            while (map_any_first(params) != NULL) {
+                map_any_iterator *iter = map_any_first(params);
+                any_free(&iter->val0);
+                map_any_erase(iter);
+            }
+            any_set_const_string(&topic_pattern, config->res_topic);
+            ret = parse_from_plain_buffer(topic, strlen(topic), topic_pattern, params);
+            if (ret != ERR_SUCCESS) {
+                fprintf(stderr, "[ERR] %s %d failed %d\n", __FUNCTION__, __LINE__, ret);
+                fail = 1;
+                break;
+            }
+            ret = parse_from_yaml_buffer(payloads[i], strlen(payloads[i]), config->res_payload, params);
+            if (ret != ERR_SUCCESS) {
+                fprintf(stderr, "[ERR] %s %d %s failed %d\n", __FUNCTION__, __LINE__, payloads[i], ret);
+                fail = 1;
+                break;
+            }
+            for (map_any_iterator *iter = map_any_first(params); iter != NULL; iter = map_any_next(iter)) {
+                char *str = any_to_json_str(&iter->val0);
+                fprintf(stdout, "\t%s -> %s\n", iter->key, str);
+                free(str);
+            }
+        }
+    }
+    any_free(&topic_pattern);
+    map_any_destroy_ex(params);
+    return fail;
+}
+
 int dev_register() {
     return 0;
 }
@@ -1149,6 +1368,9 @@ struct mapping_s {
 
 struct mapping_s mappings[] = {
     {          NODE_GW_REGISTER,           gw_register},
+    {          NODE_GW_COMMAND,             gw_command},
+    {          NODE_GW_MESSAGE,          gw_message_up},
+    {              NODE_GW_OTA,                 gw_ota},
     {         NODE_DEV_REGISTER,          dev_register},
     {             NODE_GW_LOGIN,              gw_login},
     {            NODE_GW_LOGOUT,             gw_logout},
@@ -1273,7 +1495,7 @@ int main(int argc, char **argv) {
             cases[case_count++] = mappings[j].func;
         }
     }
-    int ret = load_config(filename);
+    int ret = load_config(filename, NULL);
     if (ret != ERR_SUCCESS) {
         fprintf(stderr, "load_config failed: %d\n", ret);
         return 1;

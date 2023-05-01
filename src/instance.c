@@ -567,6 +567,14 @@ const char *get_gateway_device_name() {
     return instance.deviceName;
 }
 
+const char *get_gateway_vendor_code() {
+    return instance.vendorCode;
+}
+
+const char *get_gateway_hex_model_id() {
+    return instance.hexModelId;
+}
+
 int get_sequence() {
     return atomic_fetch_add(&instance.sequence, 1);
 }

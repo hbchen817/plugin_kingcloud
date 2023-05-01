@@ -21,6 +21,9 @@ config_t g_config;
 #define NODE_GATEWAY               "gateway"
 #define NODE_DEVICE                "device"
 #define NODE_GW_REGISTER           "gw_register"
+#define NODE_GW_MESSAGE            "gw_message_up"
+#define NODE_GW_COMMAND            "gw_command"
+#define NODE_GW_OTA                "gw_ota"
 #define NODE_DEV_REGISTER          "dev_register"
 #define NODE_GW_LOGIN              "gw_login"
 #define NODE_GW_LOGOUT             "gw_logout"
@@ -157,6 +160,9 @@ int load_config(const char *filename, const char *update) {
         if (it != NULL && any_is_map(&it->val0)) {
             struct mapping_s mappings[] = {
                 {          NODE_GW_REGISTER,           &g_config.gw_register},
+                {          NODE_GW_COMMAND,             &g_config.gw_command},
+                {          NODE_GW_MESSAGE,          &g_config.gw_message_up},
+                {              NODE_GW_OTA,                 &g_config.gw_ota},
                 {         NODE_DEV_REGISTER,          &g_config.dev_register},
                 {             NODE_GW_LOGIN,              &g_config.gw_login},
                 {            NODE_GW_LOGOUT,             &g_config.gw_logout},
@@ -313,6 +319,10 @@ any_t generate_value(any_t pattern, const map_any *context) {
                 any_set_const_string(&result, get_gateway_product_key());
             } else if (len - 2 == sizeof(NAME_GW_DEVICE_NAME) && strncmp(pattern.u.sval + 2, NAME_GW_DEVICE_NAME, sizeof(NAME_GW_DEVICE_NAME) - 1) == 0) {
                 any_set_const_string(&result, get_gateway_device_name());
+            } else if (len - 2 == sizeof(NAME_GW_VENDOR_CODE) && strncmp(pattern.u.sval + 2, NAME_GW_VENDOR_CODE, sizeof(NAME_GW_VENDOR_CODE) - 1) == 0) {
+                any_set_const_string(&result, get_gateway_vendor_code());
+            } else if (len - 2 == sizeof(NAME_GW_MODEL_ID) && strncmp(pattern.u.sval + 2, NAME_GW_MODEL_ID, sizeof(NAME_GW_MODEL_ID) - 1) == 0) {
+                any_set_const_string(&result, get_gateway_hex_model_id());
             } else if (len - 2 == sizeof(NAME_FUNC_TIMESTAMP) && strncmp(pattern.u.sval + 2, NAME_FUNC_TIMESTAMP, sizeof(NAME_FUNC_TIMESTAMP) - 1) == 0) {
                 any_set_integer(&result, time(NULL));
             } else if (len - 2 == sizeof(NAME_FUNC_IOTA) && strncmp(pattern.u.sval + 2, NAME_FUNC_IOTA, sizeof(NAME_FUNC_IOTA) - 1) == 0) {
@@ -352,7 +362,13 @@ any_t generate_value(any_t pattern, const map_any *context) {
                         } else if (key_len + 1 == sizeof(NAME_GW_DEVICE_NAME) &&
                                    strncmp(key_start, NAME_GW_DEVICE_NAME, sizeof(NAME_GW_DEVICE_NAME) - 1) == 0) {
                             new_len += strlen(get_gateway_device_name());
-                        } else if (context) {
+                        }  else if (key_len + 1 == sizeof(NAME_GW_VENDOR_CODE) &&
+                                   strncmp(key_start, NAME_GW_VENDOR_CODE, sizeof(NAME_GW_VENDOR_CODE) - 1) == 0) {
+                            new_len += strlen(get_gateway_vendor_code());
+                        }  else if (key_len + 1 == sizeof(NAME_GW_MODEL_ID) &&
+                                   strncmp(key_start, NAME_GW_MODEL_ID, sizeof(NAME_GW_MODEL_ID) - 1) == 0) {
+                            new_len += strlen(get_gateway_hex_model_id());
+                        }  else if (context) {
                             char *key = malloc(key_len + 1);
                             if (key) {
                                 strncpy(key, key_start, key_len);
@@ -401,7 +417,15 @@ any_t generate_value(any_t pattern, const map_any *context) {
                                        strncmp(key_start, NAME_GW_DEVICE_NAME, sizeof(NAME_GW_DEVICE_NAME) - 1) == 0) {
                                 strcpy(dest, get_gateway_device_name());
                                 dest += strlen(get_gateway_device_name());
-                            } else if (context) {
+                            }  else if (key_len + 1 == sizeof(NAME_GW_VENDOR_CODE) &&
+                                       strncmp(key_start, NAME_GW_VENDOR_CODE, sizeof(NAME_GW_VENDOR_CODE) - 1) == 0) {
+                                strcpy(dest, get_gateway_vendor_code());
+                                dest += strlen(get_gateway_vendor_code());
+                            }  else if (key_len + 1 == sizeof(NAME_GW_MODEL_ID) &&
+                                       strncmp(key_start, NAME_GW_MODEL_ID, sizeof(NAME_GW_MODEL_ID) - 1) == 0) {
+                                strcpy(dest, get_gateway_hex_model_id());
+                                dest += strlen(get_gateway_hex_model_id());
+                            }  else if (context) {
                                 char *key = malloc(key_len + 1);
                                 if (key) {
                                     strncpy(key, key_start, key_len);

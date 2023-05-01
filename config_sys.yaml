@@ -1,5 +1,57 @@
 functionality:
   gateway:
+    gw_message_up:
+      request:
+        topic: ${gwVC}/${gwMD}/${gwDN}/message/up
+        payload:
+          version: ${}
+          flowDirection: ${}
+          controlType: ${}
+          messageType: ${}
+          vendor: ${gwVC}
+          timestamp: ${}
+          sequence: ${IOTA}
+          data:
+            - productKey: ${devPK}
+              deviceName: ${devDN}
+    gw_command:
+      request:
+        topic: ${gwVC}/${gwMD}/${gwDN}/command/down
+        payload:
+          id: ${IOTA}
+          params:
+            - productKey: ${devPK}
+              deviceName: ${devDN}
+      response:
+        topic: ${gwVC}/${gwMD}/${gwDN}/command/ack
+        payload:
+          id: ${ID}
+          code: ${CODE}
+          data:
+            - productKey: ${devPK}
+              deviceName: ${devDN}
+      match: ["id"]
+      success:
+        CODE: 0
+    gw_ota:
+      request:
+        topic: ${gwVC}/${gwMD}/${gwDN}/ota/ack
+        payload:
+          id: ${IOTA}
+          params:
+            - productKey: ${devPK}
+              deviceName: ${devDN}
+      response:
+        topic: ${gwVC}/${gwMD}/${gwDN}/ota/ack
+        payload:
+          id: ${ID}
+          code: ${CODE}
+          data:
+            - productKey: ${devPK}
+              deviceName: ${devDN}
+      match: ["id"]
+      success:
+        CODE: 0
     topo_join:
       request:
         topic: /sys/${gwPK}/${gwDN}/thing/topo/add

@@ -109,7 +109,7 @@ $(BIN_DIR)/test_yaml: test/test_yaml.c
 	@set -e; echo $@; $(CC) $(CFLAGS_TEST) -Icontrib/libyaml/ $^ -Llib/$(ARCH) -lyaml -o $@
 
 test_hello: $(BIN_DIR)/test_hello
-test_config: $(BIN_DIR)/test_config
+test_configure: $(BIN_DIR)/test_configure
 test_aes: $(BIN_DIR)/test_aes
 test_cson: $(BIN_DIR)/test_cson
 

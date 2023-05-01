@@ -504,6 +504,7 @@ any_t any_from_yaml_file(const char *filename) {
     }
     FILE *file = fopen(filename, "rb");
     if (file == NULL) {
+        yaml_parser_delete(&parser);
         return result;
     }
     yaml_parser_set_encoding(&parser, YAML_UTF8_ENCODING);

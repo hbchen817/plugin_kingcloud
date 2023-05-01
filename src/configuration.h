@@ -4,6 +4,8 @@
 
 #define NAME_GW_PRODUCT_KEY        "gwPK"
 #define NAME_GW_DEVICE_NAME        "gwDN"
+#define NAME_GW_VENDOR_CODE        "gwVC"
+#define NAME_GW_MODEL_ID           "gwMD"
 #define NAME_DEV_PRODUCT_KEY       "devPK"
 #define NAME_DEV_DEVICE_NAME       "devDN"
 #define NAME_DEV_EVENT_NAME        "event_name"
@@ -46,6 +48,9 @@ typedef struct config_s {
     config_basic_t basic;
     config_func_t  gw_register;
     config_func_t  dev_register;
+    config_func_t  gw_message_up;
+    config_func_t  gw_command;
+    config_func_t  gw_ota;
     config_func_t  gw_login;
     config_func_t  gw_logout;
     config_func_t  topo_join;

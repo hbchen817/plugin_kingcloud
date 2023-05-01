@@ -39,6 +39,8 @@ struct Instance {
     void                *context;
     char                 productKey[32];
     char                 deviceName[32];
+    char                 vendorCode[32];
+    char                 hexModelId[32];
     char                 deviceSecret[40];
     char                 macCOO[32];
     char                 versionCOO[VERSION_LEN];
@@ -74,6 +76,8 @@ int register_gateway();
 
 const char *get_gateway_product_key();
 const char *get_gateway_device_name();
+const char *get_gateway_vendor_code();
+const char *get_gateway_hex_model_id();
 int         get_sequence();
 
 int log_error(const char *fmt, ...);
