@@ -158,17 +158,39 @@ functionality:
           code: ${CODE}
     start_permit_join:
       request:
-        topic: /sys/${gwPK}/${gwDN}/thing/service/start_permit_join
+        topic: ${gwVC}/${gwMD}/${gwDN}/command/down
         payload:
-          id: ${ID}
-          params:
-            - key: ${param_name}
-              value: ${param_value}
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${vendor}
+          timestamp: ${timestamp}
+          sequence: ${sequence}
+          data:
+            - model: ${model}
+              parentDeviceId: ${parentDeviceId}
+              deviceId: ${deviceId}
+              code: ${code}
+              value:
+                join_second: ${join_second}
+                join_type: ${join_type}
       response:
-        topic: /sys/${gwPK}/${gwDN}/thing/service/start_permit_join_reply
+        topic: ${gwVC}/${gwMD}/${gwDN}/command/ack
         payload:
-          id: ${ID}
-          code: ${CODE}
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${vendor}
+          timestamp: ${timestamp}
+          sequence: ${sequence}
+          data:
+            - model: ${model}
+              parentDeviceId: ${parentDeviceId}
+              deviceId: ${deviceId}
+              code: ${code}
+              value: ${value}
     create_scene:
       request:
         topic: /sys/${gwPK}/${gwDN}/thing/service/scene_create_update

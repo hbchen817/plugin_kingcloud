@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 const char *get_gateway_product_key() {
     return "R101Gateway";
@@ -1289,20 +1290,48 @@ int leave_zigbee_network() {
     return fail;
 }
 
+
+void get_current_time_ms(char *buf) {
+    struct timespec ts;
+
+    if (buf == NULL) {
+        return;
+    }
+
+    if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
+        return;
+    }
+
+    snprintf(buf, 32, "%lld", (long long)(ts.tv_sec) * 1000 + (long long)(ts.tv_nsec / 1000000));
+}
+
 int start_permit_join() {
     int            fail          = 0;
     map_any       *params        = map_any_create();
     any_t          topic_pattern = {.type = kUnknown};
     config_func_t *config        = &g_config.start_permit_join;
     const char    *payloads[]    = {
-        R"({"id":5})",
-        R"({"id":6,"params":[{"key":"duration","value":10}]})",
-        R"({"id":7,"params":[{"key":"duration","value":40},{"key":"installCode","value":"0123456789ABCDEF"}]})",
-        R"({"id":8,"params":[{"key":"duration","value":40},{"key":"installCode","value":"0123456789ABCDEF"},{"key":"mac","value":[""]}]})",
-        R"({"id":9,"params":[{"key":"duration","value":40},{"key":"mac","value":["1122334455667788","99AABBCCDDEEFF00"]}]})",
-        R"({"id":10,"params":[{"key":"mac","value":["1122334455667788","99AABBCCDDEEFF00"]}]})",
-        R"({"id":11,"params":[{"key":"mac","value":["1122334455667788"]}]})",
-    };
+        R"({
+            "version":"2.0",
+            "flowDirection":"0",
+            "controlType":"control.func",
+            "messageType":"",
+            "vendor":"REXENSE.TEST.001",
+            "timestamp":"1617008027337",
+            "sequence":"1234567",
+            "data":[
+                {
+                    "model":"REXENSE_TEST_001",
+                    "parentDeviceId":"",
+                    "deviceId":"REXENSE.TEST.001.002",
+                    "code":"start_zigbee_join",
+                    "value":{
+                        "join_second":"90",
+                        "join_type":"zigbee"
+                    }
+                }
+            ]
+            })"};
     for (int i = 0; i < sizeof(payloads) / sizeof(payloads[0]); i++) {
         fprintf(stdout, "\n");
         while (map_any_first(params) != NULL) {
@@ -1345,8 +1374,53 @@ int start_permit_join() {
             }
             fprintf(stdout, "%s: %s\n", __FUNCTION__, topic);
             any_t code = {.type = kInteger, .u = {.ival = 0}};
-            map_any_insert(params, "CODE", code);
-            char payload[256];
+            map_any_iterator *iter = map_any_find(params, "flowDirection");
+            if (NULL != iter) {
+                any_free(&iter->val0);
+                iter->val0 = any_from_const_string("1");
+                // map_any_erase(iter);
+            }
+            // map_any_insert(params, "flowDirection", any_from_const_string("1"));
+
+            iter = map_any_find(params, "controlType");
+            if (NULL != iter) {
+                any_free(&iter->val0);
+                map_any_erase(iter);
+            }
+            map_any_insert(params, "controlType", any_from_const_string(""));
+
+            iter = map_any_find(params, "messageType");
+            if (NULL != iter) {
+                any_free(&iter->val0);
+                map_any_erase(iter);
+            }
+            map_any_insert(params, "messageType", any_from_const_string("ack"));
+
+            iter = map_any_find(params, "code");
+            if (NULL != iter) {
+                any_free(&iter->val0);
+                map_any_erase(iter);
+            }
+            map_any_insert(params, "code", any_from_const_string("ack"));
+
+            iter = map_any_find(params, "value");
+            if (NULL != iter) {
+                any_free(&iter->val0);
+                map_any_erase(iter);
+            }
+            map_any_insert(params, "value", any_from_const_string("1"));
+
+            iter = map_any_find(params, "timestamp");
+            if (NULL != iter) {
+                any_free(&iter->val0);
+                map_any_erase(iter);
+            }
+            char timestamp[64];
+            memset(timestamp, 0, sizeof(timestamp));
+            get_current_time_ms(timestamp);
+            map_any_insert(params, "timestamp", any_from_const_string(timestamp));
+            
+            char payload[512];
             ret = format_from_context(payload, sizeof(payload), config->res_payload, params);
             if (ret < 0) {
                 fprintf(stderr, "[ERR] %s %d failed\n", __FUNCTION__, __LINE__);
