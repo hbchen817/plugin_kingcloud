@@ -402,20 +402,39 @@ functionality:
         CODE: 0
     dev_property_set:
       request:
-        topic: /sys/${devPK}/${devDN}/thing/service/property/set
+        topic: ${gwVC}/${gwMD}/${gwDN}/command/down
         payload:
-          id: ${ID}
-          params:
-            - name: ${property_name}
-              value: ${property_value}
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${vendor}
+          timestamp: ${timestamp}
+          sequence: ${sequence}
+          data:
+            - model: ${model}
+              parentDeviceId: ${parentDeviceId}
+              deviceId: ${deviceId}
+              version: ${version}
+              type: ${type}
+              code: ${code}
+              value: ${value}
       response:
-        topic: /sys/${devPK}/${devDN}/thing/service/property/set_reply
+        topic: ${gwVC}/${gwMD}/${gwDN}/command/ack
         payload:
-          id: ${ID}
-          code: ${CODE}
-      match: ["id"]
-      success:
-        CODE: 0
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${vendor}
+          timestamp: ${timestamp}
+          sequence: ${sequence}
+          data:
+            - model: ${model}
+              parentDeviceId: ${parentDeviceId}
+              deviceId: ${deviceId}
+              code: ${code}
+              value: ${value}
     dev_event_post:
       - request:
           topic: /sys/${devPK}/${devDN}/thing/event/${event_name}/post
@@ -460,10 +479,39 @@ functionality:
           code: ${CODE}
     dev_ota_request:
       request:
-        topic: /sys/${devPK}/${devDN}/ota/device/upgrade
+        topic: ${gwVC}/${gwMD}/${gwDN}/command/down
         payload:
-          id: ${ID}
-          url: ${URL}
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${vendor}
+          timestamp: ${timestamp}
+          sequence: ${sequence}
+          data:
+            - model: ${model}
+              parentDeviceId: ${parentDeviceId}
+              deviceId: ${deviceId}
+              version: ${version}
+              type: ${type}
+              code: ${code}
+              value: ${value}
+      response:
+        topic: ${gwVC}/${gwMD}/${gwDN}/command/ack
+        payload:
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${vendor}
+          timestamp: ${timestamp}
+          sequence: ${sequence}
+          data:
+            - model: ${model}
+              parentDeviceId: ${parentDeviceId}
+              deviceId: ${deviceId}
+              code: ${code}
+              value: ${value}
     dev_ota_progress:
       request:
         topic: /sys/${devPK}/${devDN}/ota/device/progress

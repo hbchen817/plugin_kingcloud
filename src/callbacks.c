@@ -1334,8 +1334,8 @@ int handle_dev_ota_request(const char *topic, const char *message, int length, v
     config_func_t *config = &g_config.dev_ota_request;
     map_any       *params = map_any_create();
     common_mqtt_subscribe(topic, message, length, config->req_topic, config->req_payload, params);
-    map_any_iterator *it_url = map_any_find(params, NAME_COMMON_OTA_URL);
-    map_any_iterator *it_dn  = map_any_find(params, NAME_DEV_DEVICE_NAME);
+    map_any_iterator *it_url = map_any_find(params, "value");
+    map_any_iterator *it_dn  = map_any_find(params, "deviceId");
     if (it_url && any_is_valid_string(&it_url->val0) && it_dn && any_is_valid_string(&it_dn->val0)) {
         RexCommand_t cmd;
         memset(&cmd, 0, sizeof(RexCommand_t));
@@ -1346,9 +1346,9 @@ int handle_dev_ota_request(const char *topic, const char *message, int length, v
         int ret = instance.processCmd(instance.context, &cmd);
         if (ret != 0) {
             log_error("call processCmd %d", ret);
-            handle_dev_ota_progress(cmd.sequence, -1, params);
+            handle_service_reply(cmd.sequence, -1, params);
         } else {
-            map_request_insert(instance.requests, cmd.sequence, handle_dev_ota_progress, params);
+            map_request_insert(instance.requests, cmd.sequence, handle_service_reply, params);
         }
     }
     return 1;
