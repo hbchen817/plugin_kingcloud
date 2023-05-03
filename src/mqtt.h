@@ -6,6 +6,7 @@ typedef int (*MqttMessageCallback)(const char *topic, const char *message, int l
 typedef void (*MqttFinishCallback)(void *context, int code);
 
 struct MqttInstance *mqtt_new(const char *address, const char *username, const char *password);
+int mqtt_set_passwd(struct MqttInstance *mqtt, const char *address, const char *username, const char *password);
 
 bool mqtt_is_connected(struct MqttInstance *mqtt);
 void mqtt_delete(struct MqttInstance *mqtt);

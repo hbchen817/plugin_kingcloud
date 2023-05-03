@@ -18,6 +18,7 @@ config_t g_config;
 #define NODE_BASIC_URL             "url"
 #define NODE_BASIC_USERNAME        "username"
 #define NODE_BASIC_PASSWORD        "password"
+#define NODE_BASIC_BROKER          "broker"
 #define NODE_FUNCTIONALITY         "functionality"
 #define NODE_GATEWAY               "gateway"
 #define NODE_DEVICE                "device"
@@ -81,6 +82,10 @@ static int load_basic_config(any_t val, config_basic_t *config) {
     iter = map_any_find(val.u.mval, NODE_BASIC_PASSWORD);
     if (iter != NULL && any_is_string(&iter->val0)) {
         config->password = strdup(iter->val0.u.sval);
+    }
+    iter = map_any_find(val.u.mval, NODE_BASIC_BROKER);
+    if (iter != NULL && any_is_string(&iter->val0)) {
+        config->broker = strdup(iter->val0.u.sval);
     }
     return ERR_SUCCESS;
 }
@@ -273,6 +278,9 @@ static void free_basic_config(config_basic_t *config) {
     }
     if (config->password) {
         free(config->password);
+    }
+    if (config->broker) {
+        free(config->broker);
     }
 }
 

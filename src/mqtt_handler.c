@@ -95,7 +95,7 @@ void register_gateway_mqtt(void *context, int code) {
     if (format_from_context(topic, sizeof(topic), topic_pattern, NULL) < 0) {
         return;
     }
-    char payload[256];
+    char payload[512];
     if (format_from_context(payload, sizeof(payload), g_config.gw_register.req_payload, NULL) < 0) {
         return;
     }

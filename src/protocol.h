@@ -1,7 +1,39 @@
-#pragma once
+#ifndef _PROTOCOL_H
+#define _PROTOCOL_H
 #include "reflect.h"
+#include "cson.h"
 
 extern const char * MQTT_PROTOCOL_VERSION;
+
+/**
+ * 设备注册相关结构体
+*/
+typedef struct {
+    char*       clientId;
+    char*       vendorCode;
+} cipher_text;
+extern const reflect_item_t cipher_text_ref[];
+
+typedef struct {
+    char*       cipherText;
+    char*       productKey;
+} device_reg_request;
+extern const reflect_item_t device_reg_request_ref[];
+
+typedef struct {
+    int         code;
+    char*       data;
+    char*       message;
+    char*       traceId;
+} device_reg_response;
+extern const reflect_item_t device_reg_response_ref[];
+
+typedef struct {
+    char*       deviceKey;
+    char*       deviceSecret;
+    char*       clientId;
+} reg_response_data;
+extern const reflect_item_t reg_response_data_ref[];
 
 struct DeviceRegisterReq_t {
     char * deviceName;
@@ -238,3 +270,5 @@ struct OtaFirmwareGetRes_t {
     int size;
 };
 extern const struct reflect_reflection OtaFirmwareGetRes_reflection[];
+
+#endif

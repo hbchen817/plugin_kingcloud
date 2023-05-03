@@ -45,6 +45,7 @@ typedef struct config_basic_s {
     char *url;
     char *username;
     char *password;
+    char *broker;
 } config_basic_t;
 
 typedef struct config_func_s {

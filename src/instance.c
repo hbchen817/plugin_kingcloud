@@ -15,6 +15,7 @@
 #include <threads.h>
 #include <time.h>
 #include <unistd.h>
+#include <curl/curl.h>
 #if ENABLE_HTTP_REGISTER
 #include <curl/curl.h>
 #endif
@@ -172,6 +173,9 @@ void instance_init(RexInitParameter_t *parameter, void *ctx) {
         base64_encode(instance.deviceName, (unsigned char *)&mac, 6);
     }
     instance.readConf(ctx, "device_secret", instance.deviceSecret, sizeof(instance.deviceSecret) - 1);
+    instance.readConf(ctx, "product_key", instance.productKey, sizeof(instance.productKey) - 1);
+    instance.readConf(ctx, "vendor_code", instance.vendorCode, sizeof(instance.vendorCode) - 1);
+    instance.readConf(ctx, "hex_model_id", instance.hexModelId, sizeof(instance.hexModelId) - 1);
     atomic_store(&instance.sequence, (int)time(NULL));
     mtx_init(&instance.mtxDevices, mtx_plain);
     instance.devices      = map_device_create();
@@ -558,6 +562,165 @@ int register_gateway() {
     return ret;
 }
 #endif
+
+static size_t write_data(void *data, size_t size, size_t nmemb, void *userp) {
+    struct message_view_t *msg = (struct message_view_t *)userp;
+    memcpy(&msg->msg[msg->len], data, size * nmemb);
+    msg->len += size * nmemb;
+    return size * nmemb;
+}
+
+int register_kc_gateway() {
+    CURL *curl = curl_easy_init();
+    if (!curl) {
+        return -1;
+    }
+    struct curl_slist *headers = curl_slist_append(NULL, "Host: develop.rexense.com");
+    headers                    = curl_slist_append(headers, "Content-Type: application/json");
+    headers                    = curl_slist_append(headers, "Connection: Keep-Alive");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+    // 从配置中读取金山云的url地址
+    curl_easy_setopt(curl, CURLOPT_URL, g_config.basic.url);
+
+    // 根据协议文档，构造cipherText JSON串，格式如下:
+    // {
+    //      "clientId":"",
+    //      "vendorCode":""
+    //  }
+    cipher_text cipher_text;
+    memset(&cipher_text, 0, sizeof(cipher_text));
+    cipher_text.clientId = instance.deviceName;
+    cipher_text.vendorCode = instance.vendorCode;
+    char* cipher_text_json;
+    int ret = csonStruct2JsonStr(cipher_text_json, &cipher_text, cipher_text_ref);
+    if (ERR_SUCCESS != ret) {
+        log_error("cson struct[cipher_text] to json error");
+        return 1;
+    }
+
+    // 按照协议规定，需要对cipher_text_json进行aes加密
+    // 将产品秘钥(product_secret)作为一个十六进制字符串，解析为一个字节数组(byte[])
+    unsigned char product_secret[16];
+    hex_to_bytes(instance.deviceSecret, product_secret, strlen(instance.deviceSecret));
+
+    // 使用获得的字节数组(byte[])作为AES加密算法的密钥，对生成的JSON字符串进行加密
+    int iv_len = AES_BLOCK_SIZE;
+    unsigned char iv[iv_len];
+    gen_random_iv(iv, iv_len);
+
+    int input_len = strlen(cipher_text_json) + 1; // 包
+    int padded_input_len = ((input_len + AES_BLOCK_SIZE - 1) / AES_BLOCK_SIZE) * AES_BLOCK_SIZE; // 对齐到16的整数倍
+    unsigned char *padded_input = (unsigned char *)malloc(padded_input_len);
+    memset(padded_input, 0, padded_input_len);
+    memcpy(padded_input, cipher_text_json, input_len);
+
+    int output_len = padded_input_len + AES_BLOCK_SIZE;
+    unsigned char *output = (unsigned char *)malloc(output_len);
+    aes_encrypt(product_secret, iv, padded_input, padded_input_len, output);
+
+    // 将加密后的结果转换为十六进制字符串
+    char *cipher_text_hex = (char *)malloc(output_len * 2 + 1);
+    memset(cipher_text_hex, 0, output_len * 2 + 1);
+    bytes_to_hex(output, output_len, cipher_text_hex);
+
+
+    // 开始构造请求json串，按照预定，格式如下：
+    // {
+    //      "cipherText": "",
+    //      "productKey": ""
+    // }
+    device_reg_request reg_request;
+    memset(&reg_request, 0, sizeof(device_reg_request));
+    reg_request.productKey = instance.productKey;
+    reg_request.cipherText = cipher_text_hex;
+    char* reg_request_json;
+    ret = csonStruct2JsonStr(reg_request_json, &reg_request, device_reg_request_ref);
+    if (ERR_SUCCESS != ret) {
+        log_error("cson struct[device_reg_request] to json error");
+        free(cipher_text_json);
+        free(padded_input);
+        free(output);
+        free(cipher_text_hex);
+        return 1;
+    }
+
+    // 尝试请求金山云
+    log_info("register gateway: %s", reg_request_json);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, reg_request_json);
+    struct message_view_t ret_msg;
+    memset(&ret_msg, 0, sizeof(ret_msg));
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ret_msg);
+    ret = curl_easy_perform(curl);
+    if (ERR_SUCCESS != ret) {
+        log_error("curl gateway: %s error: %d", g_config.basic.url, ret);
+        free(cipher_text_json);
+        free(padded_input);
+        free(output);
+        free(cipher_text_hex);
+        free(reg_request_json);
+        curl_easy_cleanup(curl);
+        return ret;
+    }
+
+    // free
+    free(cipher_text_json);
+    free(padded_input);
+    free(output);
+    free(cipher_text_hex);
+    free(reg_request_json);
+    curl_easy_cleanup(curl);    
+
+    // 如果请求成功了，可以解密mqtt一些参数了
+    ret_msg.msg[ret_msg.len] = '\0';
+    long response_code;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+    if (response_code == 200) {
+        device_reg_response reg_response;
+        memset(&reg_response, 0, sizeof(device_reg_response));
+        ret = csonJsonStr2Struct(ret_msg.msg, &reg_response, device_reg_response_ref);
+        if (ret == ERR_SUCCESS) {
+            if (reg_response.code == 200) {
+                log_info("register gateway response: %s", ret_msg.msg);
+
+                // 针对reg_response中的data字段做AES解密
+                int data_text_len = strlen(reg_response.data) / 2;
+                unsigned char *data_text = (unsigned char *)malloc(data_text_len);
+                hex_to_bytes(reg_response.data, data_text, strlen(reg_response.data));
+
+                // 使用步骤6中获得的字节数组(byte[])作为AES解密算法的密钥，对步骤5中生成的十六进制字符串进行解密
+                int decrypted_len = data_text_len + AES_BLOCK_SIZE;
+                unsigned char *decrypted = (unsigned char *)malloc(decrypted_len);
+                aes_decrypt(product_secret, iv, data_text, data_text_len, decrypted);
+
+                // 将相关变量赋值给instance
+                reg_response_data data;
+                memset(&data, 0, sizeof(reg_response_data));
+                ret = csonJsonStr2Struct(decrypted, &data, reg_response_data_ref);
+                if (ret != ERR_SUCCESS) {
+                    log_warn("gateway data is illegal: %s", reg_response.data);
+                    ret = 1;
+                } else {
+                    strcpy(instance.mqttUsername, data.deviceKey);
+                    strcpy(instance.mqttPassword, data.deviceSecret);
+                }
+                csonFreePointer(&data, reg_response_data_ref);
+                free(data_text);
+                free(decrypted);
+            } else {
+                log_warn("register failed: %s", ret_msg.msg);
+                ret = 1;
+            }
+            csonFreePointer(&reg_response, device_reg_request_ref);
+        }
+    } else {
+        log_warn("register failed: %d %s", response_code, ret_msg.msg);
+        ret = 1;
+    }
+
+    return ret;
+}
 
 const char *get_gateway_product_key() {
     return instance.productKey;

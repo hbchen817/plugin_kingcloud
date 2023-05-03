@@ -2,6 +2,33 @@
 
 const char * MQTT_PROTOCOL_VERSION = "1.0";
 
+const reflect_item_t cipher_text_ref[] = {
+    _property_string(cipher_text, clientId),
+    _property_string(cipher_text, vendorCode),
+    _property_end()
+};
+
+const reflect_item_t device_reg_request_ref[] = {
+    _property_string(device_reg_request, cipherText),
+    _property_string(device_reg_request, productKey),
+    _property_end()
+};
+
+const reflect_item_t device_reg_response_ref[] = {
+    _property_int(device_reg_response, code),
+    _property_string(device_reg_response, data),
+    _property_string(device_reg_response, message),
+    _property_string(device_reg_response, traceId),
+    _property_end()
+};
+
+const reflect_item_t reg_response_data_ref[] = {
+    _property_string(reg_response_data, deviceKey),
+    _property_string(reg_response_data, deviceSecret),
+    _property_string(reg_response_data, clientId),
+    _property_end()
+};
+
 const struct reflect_reflection DeviceRegisterReq_reflection[] = {
     REFLECT_DECLARE_STR_PTR(struct DeviceRegisterReq_t, deviceName),
     REFLECT_DECLARE_STR_PTR(struct DeviceRegisterReq_t, productKey),

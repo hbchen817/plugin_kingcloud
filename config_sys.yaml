@@ -1,3 +1,8 @@
+basic:
+   url: ssl://emqx.rexense.com:8883
+   username: rexense
+   password: rexense
+   broker: https://www.kc.com:443
 functionality:
   gateway:
     gw_message_up:

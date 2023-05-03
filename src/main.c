@@ -18,7 +18,7 @@ __attribute((constructor)) void plugin_init(void) {
     strcpy(instance.info.name, "mqtt_plugin");
     strcpy(instance.info.desc, "connect to mqtt broker");
     strcpy(instance.info.ver, VERSION);
-    strcpy(instance.info.uuid, "c7d8cb8059a743c59ae846fa3fdc37ca");
+    strcpy(instance.info.uuid, "5ca731887640441eb63ba435bd8a6bf3");
 }
 
 __attribute((destructor)) void plugin_fini(void) {
@@ -52,7 +52,20 @@ int rex_start() {
     strcpy(instance.productKey, instance.devList.devices[0].productId);
     strcpy(instance.deviceName, instance.devList.devices[0].mac);
     strcpy(instance.versionCOO, instance.devList.devices[0].version);
+
+    // 针对金云场景，首先请求一下金山云
+    ret = register_kc_gateway();
+    if (0 != ret) {
+        log_error("register kc gateway error: %d", ret);
+        return 1;
+    }
+
+    // 更改一下mqtt密码
+    mqtt_set_passwd(instance.mqtt, g_config.basic.broker, instance.mqttUsername, instance.mqttPassword);
+
+    // 开启mqtt
     mqtt_start(instance.mqtt, check_register, NULL);
+
     return 0;
 }
 

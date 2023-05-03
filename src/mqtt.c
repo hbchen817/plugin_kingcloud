@@ -421,6 +421,21 @@ struct MqttInstance *mqtt_new(const char *address, const char *username, const c
     return mqtt;
 }
 
+int mqtt_set_passwd(struct MqttInstance *mqtt, const char *address, 
+                    const char *username, const char *password) {
+    mqtt->address = (char *)mqtt + sizeof(struct MqttInstance);
+    strcpy(mqtt->address, address);
+    if (username != NULL && username[0] != '\0') {
+        mqtt->username = mqtt->address + strlen(address) + 1;
+        strcpy(mqtt->username, username);
+        if (password != NULL && password[0] != '\0') {
+            mqtt->password = mqtt->username + strlen(username) + 1;
+            strcpy(mqtt->password, password);
+        }
+    }
+}
+
+
 bool mqtt_is_connected(struct MqttInstance *mqtt) {
     return mqtt != NULL && mqtt->connected;
 }

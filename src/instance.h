@@ -63,6 +63,7 @@ struct Instance {
 extern struct Instance instance;
 
 void instance_init(RexInitParameter_t *parameter, void *ctx);
+int register_kc_gateway();
 void instance_deinit();
 int  instance_require_timer();
 void instance_release_timer(int fd);
