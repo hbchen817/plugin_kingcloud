@@ -43,9 +43,10 @@ define runcompile
 endef
 
 $(TARGET): $(INT_DIR) $(DEP_FILES) $(OBJ_FILES)
-	@set -e; echo $@; $(CC) -shared -g -o $@ $(CLIB) $(OBJ_FILES)
+	@set -e; echo $@; $(CC) -shared -g -o $@ $(OBJ_FILES) $(CLIB)
 $(INT_DIR):
 	@test -d $@ || mkdir -p $@
+all: $(TARGET)
 
 $(ROOT_DIR)_int_$(ARCH)/%.d: $(ROOT_DIR)src/%.c
 	$(call gendepends)
