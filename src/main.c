@@ -18,7 +18,7 @@ __attribute((constructor)) void plugin_init(void) {
     strcpy(instance.info.name, "mqtt_plugin");
     strcpy(instance.info.desc, "connect to mqtt broker");
     strcpy(instance.info.ver, VERSION);
-    strcpy(instance.info.uuid, "5ca731887640441eb63ba435bd8a6bf3");
+    strcpy(instance.info.uuid, "c7d8cb8059a743c59ae846fa3fdc37ca");
 }
 
 __attribute((destructor)) void plugin_fini(void) {

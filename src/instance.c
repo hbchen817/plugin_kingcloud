@@ -593,7 +593,7 @@ int register_kc_gateway() {
     cipher_text.clientId = instance.deviceName;
     cipher_text.vendorCode = instance.vendorCode;
     char* cipher_text_json;
-    int ret = csonStruct2JsonStr(cipher_text_json, &cipher_text, cipher_text_ref);
+    int ret = csonStruct2JsonStr(&cipher_text_json, &cipher_text, cipher_text_ref);
     if (ERR_SUCCESS != ret) {
         log_error("cson struct[cipher_text] to json error");
         return 1;
@@ -635,7 +635,7 @@ int register_kc_gateway() {
     reg_request.productKey = instance.productKey;
     reg_request.cipherText = cipher_text_hex;
     char* reg_request_json;
-    ret = csonStruct2JsonStr(reg_request_json, &reg_request, device_reg_request_ref);
+    ret = csonStruct2JsonStr(&reg_request_json, &reg_request, device_reg_request_ref);
     if (ERR_SUCCESS != ret) {
         log_error("cson struct[device_reg_request] to json error");
         free(cipher_text_json);

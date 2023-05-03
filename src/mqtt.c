@@ -421,7 +421,7 @@ struct MqttInstance *mqtt_new(const char *address, const char *username, const c
     return mqtt;
 }
 
-int mqtt_set_passwd(struct MqttInstance *mqtt, const char *address, 
+void mqtt_set_passwd(struct MqttInstance *mqtt, const char *address, 
                     const char *username, const char *password) {
     mqtt->address = (char *)mqtt + sizeof(struct MqttInstance);
     strcpy(mqtt->address, address);

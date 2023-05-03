@@ -15,8 +15,6 @@ VERSION_MINOR = 0
 VERSION_PATCH = 0
 VERSION_GIT = $(shell git log --oneline | wc -l)
 VERSION_HASH = $(shell git rev-parse --short HEAD)
-#VERSION_GIT = "test"
-#VERSION_HASH = "test"
 VERSION := $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)-$(VERSION_GIT)-$(VERSION_HASH)
 
 ROOT_DIR ?= ./
@@ -63,18 +61,6 @@ clean:
 debug:
 	@echo $(OBJ_FILES)
 
-$(BIN_DIR)/test_hello: test/test_hello.c
-	@set -e; echo $@; $(CC) $(CFLAGS_TEST) -Icontrib/libyaml/ -Icontrib/cJSON/ -Iinc/ -Isrc/ $^ -Llib/$(ARCH) -lyaml -lcjson -o $@
-
-$(BIN_DIR)/test_config: test/test_config.c src/config.c
-	@set -e; echo $@; $(CC) $(CFLAGS_TEST) -Icontrib/libyaml/ -Icontrib/cJSON/ -Iinc/ -Isrc/ $^ -Llib/$(ARCH) -lyaml -lcjson -o $@
-
-$(BIN_DIR)/test_aes: test/test_aes.c src/aes.c
-	@set -e; echo $@; $(CC) $(CFLAGS_TEST) -Icontrib/libyaml/ -Icontrib/cJSON/ -Iinc/ -Isrc/ $^ -Llib/$(ARCH) -lyaml -lcjson -o $@
-
-$(BIN_DIR)/test_cson: test/test_cson.c test/cson_test1.c test/cson_test2.c test/cson_test3.c src/cson.c src/cjson_impl.c
-	@set -e; echo $@; $(CC) $(CFLAGS_TEST) -Icontrib/libyaml/ -Icontrib/cJSON/ -Iinc/ -Isrc/ $^ -Llib/$(ARCH) -lyaml -lcjson -o $@
-
 $(BIN_DIR)/test_configure: test/test_configure.c src/configuration.c src/rbtree.c src/any.c
 	@set -e; echo $@; $(CC) $(CFLAGS_TEST) -Icontrib/libyaml/ -Icontrib/cJSON/ -Iinc/ -Isrc/ $^ -Llib/$(ARCH) -lyaml -lcjson -o $@
 
@@ -107,11 +93,6 @@ $(BIN_DIR)/test_timerfd: test/test_timerfd.c src/map.h src/map.c src/rbtree.h sr
 
 $(BIN_DIR)/test_yaml: test/test_yaml.c
 	@set -e; echo $@; $(CC) $(CFLAGS_TEST) -Icontrib/libyaml/ $^ -Llib/$(ARCH) -lyaml -o $@
-
-test_hello: $(BIN_DIR)/test_hello
-test_configure: $(BIN_DIR)/test_configure
-test_aes: $(BIN_DIR)/test_aes
-test_cson: $(BIN_DIR)/test_cson
 
 test: $(BIN_DIR)/test_get_interface $(BIN_DIR)/test_hmac $(BIN_DIR)/test_macro $(BIN_DIR)/test_map $(BIN_DIR)/test_preprocessor $(BIN_DIR)/test_reflect $(BIN_DIR)/test_thread_pool $(BIN_DIR)/test_timerfd
 
