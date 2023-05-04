@@ -58,6 +58,81 @@ static int report_version() {
     return ERR_SUCCESS;
 }
 
+int handle_kc_message_up(const char *topic, const char *message, int length, void *context) {
+    return 1;
+}
+
+int handle_kc_command_down(const char *topic, const char *message, int length, void *context) {
+    log_info("%s %s: %.*s", __FUNCTION__, topic, length, message);
+
+    // 解析json
+    cJSON *root = cJSON_Parse(message);
+    if (NULL == root) {
+        log_error("%s failed", __FUNCTION__);
+        cJSON_Delete(root);
+        return ERR_INVALID_ARGUMENT;
+    }
+
+    // 获取control type && code
+    cJSON *header = cJSON_GetObjectItem(root, "controlType");
+    cJSON *data = cJSON_GetObjectItem(root, "data");
+    char controlType[16];
+    char code[32];
+    memset(controlType, 0, sizeof(controlType));
+    memset(code, 0, sizeof(code));
+    cJSON *data0 = cJSON_GetArrayItem(data, 0);
+    cJSON *codeStr = cJSON_GetObjectItem(data0, "code");
+    strcpy(controlType, header->valuestring);
+    strcpy(code, codeStr->valuestring);
+    cJSON_Delete(root);
+
+    // 时间关系，这里直接根据金山云协议报文中的内容进行处理哈
+    // 可能会是一个巨长的if else
+    if ((0 == strcmp(NAME_KC_COMMON_CONTROL_TYPE, controlType)
+             && (0 == strcmp("start_zigbee_join", code)))) {
+        // 开启组网
+
+        // TODO: 网关组网
+
+        // 释放
+
+        return ERR_SUCCESS;
+    }
+
+    // 停止组网
+    if ((0 == strcmp(NAME_KC_COMMON_CONTROL_TYPE, controlType)
+             && (0 == strcmp("stop_zigbee_join", code)))) {
+
+        // TODO: 网关组网
+
+        // 释放
+
+        return ERR_SUCCESS;
+    }
+
+    // 局域网扫描入网
+    if ((0 == strcmp(NAME_KC_COMMON_CONTROL_TYPE, controlType)
+             && (0 == strcmp("network_scan_join", code)))) {
+        // TODO: 网关组网
+
+        // 释放
+
+        return ERR_SUCCESS;
+    }
+
+    return 1;
+}
+
+int handle_kc_command_ack(const char *topic, const char *message, int length, void *context) {
+    log_info("%s %s: %.*s", __FUNCTION__, topic, length, message);
+    return 1;
+}
+
+int handle_kc_ota_ack(const char *topic, const char *message, int length, void *context) {
+    log_info("%s %s: %.*s", __FUNCTION__, topic, length, message);
+    return 1;
+}
+
 // 2.1.1 网关动态注册
 int handle_register_gateway_mqtt_reply(const char *topic, const char *message, int length, void *context) {
     log_info("%s %s: %.*s", __FUNCTION__, topic, length, message);

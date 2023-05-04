@@ -265,13 +265,13 @@ void add_device(const char *mac, const RexTslModelInfo_t *tsl, const char *secre
     map_any_insert(context, NAME_DEV_PRODUCT_KEY, any_from_const_string(tsl->productId));
     map_any_insert(context, NAME_DEV_DEVICE_NAME, any_from_const_string(mac));
     char topic[256];
-    SUBSCRIBE_UPSTREAM_TOPIC(dev_login, handle_sub_login_reply)
-    SUBSCRIBE_UPSTREAM_TOPIC(dev_logout, handle_sub_logout_reply)
-    SUBSCRIBE_UPSTREAM_TOPIC(dev_property_post, handle_event_property_post_reply)
-    SUBSCRIBE_DOWNSTREAM_TOPIC(dev_property_set, handle_service_property_set)
-    SUBSCRIBE_DOWNSTREAM_TOPIC(dev_set_alias, handle_service_set_alias)
-    SUBSCRIBE_DOWNSTREAM_TOPIC(dev_ota_request, handle_dev_ota_request)
-    SUBSCRIBE_UPSTREAM_TOPIC(dev_ota_progress, handle_ota_progress_reply)
+    // SUBSCRIBE_UPSTREAM_TOPIC(dev_login, handle_sub_login_reply)
+    // SUBSCRIBE_UPSTREAM_TOPIC(dev_logout, handle_sub_logout_reply)
+    // SUBSCRIBE_UPSTREAM_TOPIC(dev_property_post, handle_event_property_post_reply)
+    // SUBSCRIBE_DOWNSTREAM_TOPIC(dev_property_set, handle_service_property_set)
+    // SUBSCRIBE_DOWNSTREAM_TOPIC(dev_set_alias, handle_service_set_alias)
+    // SUBSCRIBE_DOWNSTREAM_TOPIC(dev_ota_request, handle_dev_ota_request)
+    // SUBSCRIBE_UPSTREAM_TOPIC(dev_ota_progress, handle_ota_progress_reply)
     for (int j = 0; j < tsl->eventInfoNum; j++) {
         map_any_iterator *iter = map_any_find(context, NAME_DEV_EVENT_NAME);
         if (iter == NULL) {

@@ -8,6 +8,11 @@ typedef int (*service_response)(int id, int code, void *data);
 
 void init_topics(struct DeviceList *list);
 
+int handle_kc_message_up(const char *topic, const char *message, int length, void *context);
+int handle_kc_command_down(const char *topic, const char *message, int length, void *context);
+int handle_kc_command_ack(const char *topic, const char *message, int length, void *context);
+int handle_kc_ota_ack(const char *topic, const char *message, int length, void *context);
+
 // 2.1.1 网关动态注册
 int handle_register_gateway_mqtt_reply(const char *topic, const char *message, int length, void *context);
 
