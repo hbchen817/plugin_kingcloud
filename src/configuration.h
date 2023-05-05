@@ -46,6 +46,10 @@ typedef struct config_basic_s {
     char *username;
     char *password;
     char *broker;
+    char *productKey;
+    char *productSecret;
+    char *vendorCode;
+    char *modelCode;
 } config_basic_t;
 
 typedef struct config_func_s {

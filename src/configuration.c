@@ -19,6 +19,10 @@ config_t g_config;
 #define NODE_BASIC_USERNAME        "username"
 #define NODE_BASIC_PASSWORD        "password"
 #define NODE_BASIC_BROKER          "broker"
+#define NODE_BASIC_PRODUCT_KEY     "productKey"
+#define NODE_BASIC_PRODUCT_SECRET  "productSecret"
+#define NODE_BASIC_VENDOR_CODE     "vendorCode"
+#define NODE_BASIC_MODEL_CODE      "modelCode"
 #define NODE_FUNCTIONALITY         "functionality"
 #define NODE_GATEWAY               "gateway"
 #define NODE_DEVICE                "device"
@@ -86,6 +90,22 @@ static int load_basic_config(any_t val, config_basic_t *config) {
     iter = map_any_find(val.u.mval, NODE_BASIC_BROKER);
     if (iter != NULL && any_is_string(&iter->val0)) {
         config->broker = strdup(iter->val0.u.sval);
+    }
+    iter = map_any_find(val.u.mval, NODE_BASIC_PRODUCT_KEY);
+    if (iter != NULL && any_is_string(&iter->val0)) {
+        config->productKey = strdup(iter->val0.u.sval);
+    }
+    iter = map_any_find(val.u.mval, NODE_BASIC_PRODUCT_SECRET);
+    if (iter != NULL && any_is_string(&iter->val0)) {
+        config->productSecret = strdup(iter->val0.u.sval);
+    }
+    iter = map_any_find(val.u.mval, NODE_BASIC_VENDOR_CODE);
+    if (iter != NULL && any_is_string(&iter->val0)) {
+        config->vendorCode = strdup(iter->val0.u.sval);
+    }
+    iter = map_any_find(val.u.mval, NODE_BASIC_MODEL_CODE);
+    if (iter != NULL && any_is_string(&iter->val0)) {
+        config->modelCode = strdup(iter->val0.u.sval);
     }
     return ERR_SUCCESS;
 }
@@ -281,6 +301,18 @@ static void free_basic_config(config_basic_t *config) {
     }
     if (config->broker) {
         free(config->broker);
+    }
+    if (config->productKey) {
+        free(config->productKey);
+    }
+    if (config->productSecret) {
+        free(config->productSecret);
+    }
+    if (config->vendorCode) {
+        free(config->vendorCode);
+    }
+    if (config->modelCode) {
+        free(config->modelCode);
     }
 }
 

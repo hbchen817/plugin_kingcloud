@@ -53,16 +53,6 @@ int rex_start() {
     strcpy(instance.deviceName, instance.devList.devices[0].mac);
     strcpy(instance.versionCOO, instance.devList.devices[0].version);
 
-    // 针对金云场景，首先请求一下金山云
-    ret = register_kc_gateway();
-    if (0 != ret) {
-        log_error("register kc gateway error: %d", ret);
-        return 1;
-    }
-
-    // 更改一下mqtt密码
-    mqtt_set_passwd(instance.mqtt, g_config.basic.broker, instance.mqttUsername, instance.mqttPassword);
-
     // 开启mqtt
     mqtt_start(instance.mqtt, check_register, NULL);
 

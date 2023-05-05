@@ -1,8 +1,12 @@
 basic:
-   url: ssl://emqx.rexense.com:8883
+   url: https://aiot-platform.ksyun.com/api/v2/device/authorization
    username: rexense
    password: rexense
-   broker: https://www.kc.com:443
+   broker: 120.92.211.16:1883
+   productKey: cmV4ZW5zZS5nYXRld2F5LnJnNDEwMC52Ng==
+   productSecret: 2444989beebddd4a2cff610f4190b1e8
+   vendorCode: rexense
+   modelCode: rexense.gateway.rg4100.v6
 functionality:
   gateway:
     gw_message_up:
