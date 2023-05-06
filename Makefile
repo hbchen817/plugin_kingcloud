@@ -1,6 +1,6 @@
 CC := $(TOOLCHAIN_PREFIX)gcc
 AR := $(TOOLCHAIN_PREFIX)ar
-CFLAGS = -c -g3 -O2 -Wall -std=gnu11 -fPIC -fvisibility=hidden
+CFLAGS = -c -g3 -O0 -Wall -std=gnu11 -fPIC -fvisibility=hidden
 CFLAGS_TEST = -g3 -O2 -Wall -std=gnu11
 ifeq ($(TOOLCHAIN_PREFIX), )
 	ARCH := x86_64
