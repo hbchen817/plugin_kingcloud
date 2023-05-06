@@ -578,25 +578,16 @@ static size_t write_data(void *data, size_t size, size_t nmemb, void *userp) {
     return size * nmemb;
 }
 
-/* Convert hexadecimal string to binary data */
-int decodeHex(const char* hexStr, unsigned char* result) {
-    int i, len = strlen(hexStr);
-    if (len % 2 != 0) {
-        return -1;
+void hex_encode(const unsigned char* bin, int len, char* hexstr) {
+    for (int i = 0; i < len; i++) {
+        sprintf(hexstr + 2*i, "%02x", bin[i]);
     }
-    for (i = 0; i < len; i += 2) {
-        sscanf(&hexStr[i], "%2hhx", &result[i/2]);
-    }
-    return len/2;
 }
 
-/* Convert binary data to hexadecimal string */
-void encodeHex(const unsigned char* data, int len, char* hexStr) {
-    int i;
-    for (i = 0; i < len; i++) {
-        sprintf(&hexStr[i*2], "%02x", data[i]);
+void hex_decode(const char* hexstr, unsigned char* bin, int len) {
+    for (int i = 0; i < len; i++) {
+        sscanf(hexstr + 2*i, "%2hhx", &bin[i]);
     }
-    hexStr[len*2] = '\0';
 }
 
 int register_kc_gateway() {
@@ -620,7 +611,7 @@ int register_kc_gateway() {
     // 按照协议规定，需要对cipher_text_json进行aes加密
     // 将产品秘钥(product_secret)作为一个十六进制字符串，解析为一个字节数组(byte[])
     unsigned char product_secret[16];
-    decodeHex(instance.deviceSecret, product_secret);
+    hex_decode(instance.deviceSecret, product_secret, 16);
 
     /* Encrypt JSON object with AES-128 */
     unsigned char iv[AES_BLOCK_SIZE];
@@ -631,11 +622,12 @@ int register_kc_gateway() {
     int out_len = (in_len + AES_BLOCK_SIZE - 1) / AES_BLOCK_SIZE * AES_BLOCK_SIZE;
     unsigned char* cipherText = malloc(out_len);
     memset(cipherText, 0, out_len);
-    AES_cbc_encrypt((unsigned char*)cipher_text_json, cipherText, in_len, &aes_key, iv, AES_ENCRYPT);
+    AES_cbc_encrypt((unsigned char*)cipher_text_json, cipherText, out_len, &aes_key, iv, AES_ENCRYPT);
 
     /* Encode ciphertext to hexadecimal string */
     char* cipherText_hex = malloc(out_len * 2 + 1);
-    encodeHex(cipherText, out_len, cipherText_hex);
+    memset(cipherText_hex, 0, sizeof(cipherText_hex));
+    hex_encode(cipherText, out_len, cipherText_hex);
 
     // 开始构造请求json串，按照预定，格式如下：
     // {
@@ -693,9 +685,16 @@ int register_kc_gateway() {
     // 如果请求成功了，可以解密mqtt一些参数了
     long response_code = 0L;
     ret_msg.msg[ret_msg.len] = '\0';
-    //curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+    /* 获取响应码 */
+    ret = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);;
+    if(ret == CURLE_OK) {
+        log_info("Response code: %ld\n", response_code);
+    } else {
+        log_error("Error getting response code: %s\n", curl_easy_strerror(ret));
+    }
+
     curl_easy_cleanup(curl); 
-    if (response_code == 200) {
+    if (response_code == (long) 200) {
         log_warn("register response: %ld %s", response_code, ret_msg.msg);
         device_reg_response reg_response;
         memset(&reg_response, 0, sizeof(device_reg_response));
@@ -705,7 +704,8 @@ int register_kc_gateway() {
                 /* Decode encrypted data from hexadecimal string */
                 char* cipherText_hex = reg_response.data;
                 unsigned char cipherText[256];
-                int cipherText_len = decodeHex(cipherText_hex, cipherText);
+                int cipherText_len = sizeof(cipherText_hex) / 2;
+                hex_decode(cipherText_hex, cipherText, cipherText_len);
 
                 /* Decrypt ciphertext with AES-128 */
                 unsigned char iv[AES_BLOCK_SIZE];
@@ -733,10 +733,11 @@ int register_kc_gateway() {
                 csonFreePointer(&data, reg_response_data_ref);
                 free(decrypted);
             } else {
-                log_warn("register failed: %s", ret_msg.msg);
+                log_warn("register failed: %ld %s %s", reg_response.code, 
+                            reg_response.message, reg_response.traceId);
                 ret = 1;
             }
-            csonFreePointer(&reg_response, device_reg_request_ref);
+            csonFreePointer(&reg_response, device_reg_response_ref);
         }
     } else {
         log_warn("register failed: %ld %s", response_code, ret_msg.msg);
