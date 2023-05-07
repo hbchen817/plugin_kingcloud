@@ -10,7 +10,7 @@ basic:
 functionality:
   gateway:
     gw_message_up:
-      request:
+      response:
         topic: ${gwVC}/${gwMD}/${gwDN}/message/up
         payload:
           version: ${version}

@@ -176,7 +176,16 @@ void instance_init(RexInitParameter_t *parameter, void *ctx) {
     strcpy(instance.productKey, g_config.basic.productKey);
     strcpy(instance.deviceSecret, g_config.basic.productSecret);
     strcpy(instance.vendorCode, g_config.basic.vendorCode);
-    strcpy(instance.hexModelId, g_config.basic.modelCode);
+    strcpy(instance.hexModelCode, g_config.basic.modelCode);
+    
+    // 将.替换为_，得到model_hex_id
+    memcpy(instance.hexModelId, instance.hexModelCode, sizeof(instance.hexModelCode));
+    char *dot_pos = strchr(instance.hexModelId, '.'); // 查找第一个.
+    while (dot_pos != NULL) {
+        *dot_pos = '_'; // 将.替换为_
+        dot_pos = strchr(dot_pos, '.'); // 继续查找下一个.
+    }
+
     atomic_store(&instance.sequence, (int)time(NULL));
     mtx_init(&instance.mtxDevices, mtx_plain);
     instance.devices      = map_device_create();

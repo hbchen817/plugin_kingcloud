@@ -40,6 +40,7 @@ struct Instance {
     char                 productKey[64];
     char                 deviceName[64];
     char                 vendorCode[64];
+    char                 hexModelCode[64];
     char                 hexModelId[64];
     char                 deviceSecret[64];
     char                 macCOO[32];

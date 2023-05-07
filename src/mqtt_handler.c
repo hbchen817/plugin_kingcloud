@@ -31,6 +31,7 @@ static void logout_topics(void *context, int code) {
 void init_topics(struct DeviceList *list) {
     char topic[256];
     SUBSCRIBE_UPSTREAM_TOPIC(gw_message_up, handle_kc_message_up)
+    SUBSCRIBE_UPSTREAM_TOPIC(gw_command, handle_kc_command_down)
     SUBSCRIBE_DOWNSTREAM_TOPIC(gw_command, handle_kc_command_down)
     SUBSCRIBE_DOWNSTREAM_TOPIC(gw_ota, handle_kc_ota_ack)
 
