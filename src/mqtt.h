@@ -5,12 +5,10 @@ struct MqttInstance;
 typedef int (*MqttMessageCallback)(const char *topic, const char *message, int length, void *context);
 typedef void (*MqttFinishCallback)(void *context, int code);
 
-struct MqttInstance *mqtt_new(const char *address, const char *username, const char *password);
-void mqtt_set_passwd(struct MqttInstance *mqtt, const char *address, const char *username, const char *password);
-
+struct MqttInstance *mqtt_new();
 bool mqtt_is_connected(struct MqttInstance *mqtt);
 void mqtt_delete(struct MqttInstance *mqtt);
-int  mqtt_start(struct MqttInstance *mqtt, MqttFinishCallback onConnect, void *context);
+int  mqtt_start(struct MqttInstance *mqtt, MqttFinishCallback onConnect, void *context, char *address, char *username, char *password);
 int  mqtt_stop(struct MqttInstance *mqtt);
 int  mqtt_subscribe(struct MqttInstance *mqtt, const char *topic, MqttMessageCallback cb, void *context);
 int  mqtt_subscribe_ex(struct MqttInstance *mqtt, const char *topic, MqttMessageCallback cb, void *context, MqttFinishCallback fc, void *fcctx);

@@ -379,62 +379,22 @@ static int messageArrived(void *context, char *topicName, int topicLen, MQTTAsyn
     return 1;
 }
 
-struct MqttInstance *mqtt_new(const char *address, const char *username, const char *password) {
-    log_debug("%s: %s, %s, %s", __FUNCTION__, address, username, password);
+struct MqttInstance *mqtt_new() {
     int length = sizeof(struct MqttInstance);
-    if (address != NULL) {
-        length += strlen(address) + 1;
-    }
-    if (username != NULL) {
-        length += strlen(username) + 1;
-    }
-    if (password != NULL) {
-        length += strlen(password) + 1;
-    }
+
+    // 地址、用户名、密码默认都预留64个字符吧
+    length += 64 * 3;
     struct MqttInstance *mqtt = (struct MqttInstance *)malloc(length);
     memset(mqtt, 0, length);
     mqtt->address = (char *)mqtt + sizeof(struct MqttInstance);
-    strcpy(mqtt->address, address);
-    if (username != NULL && username[0] != '\0') {
-        mqtt->username = mqtt->address + strlen(address) + 1;
-        strcpy(mqtt->username, username);
-        if (password != NULL && password[0] != '\0') {
-            mqtt->password = mqtt->username + strlen(username) + 1;
-            strcpy(mqtt->password, password);
-        }
-    }
+    mqtt->username = mqtt->address + 64;
+    mqtt->password = mqtt->username + 64;
+    
     queue_pending_msg_init(&mqtt->pendingMessages);
-    int rc = MQTTAsync_create(&mqtt->client, mqtt->address, instance.deviceName, MQTTCLIENT_PERSISTENCE_NONE, NULL);
-    if (rc != MQTTASYNC_SUCCESS) {
-        log_error("Failed to create client object: %d", rc);
-        free(mqtt);
-        return NULL;
-    }
-    rc = MQTTAsync_setCallbacks(mqtt->client, mqtt, connlost, messageArrived, NULL);
-    if (rc != MQTTASYNC_SUCCESS) {
-        log_error("Failed to set callback: %d", rc);
-        free(mqtt);
-        return NULL;
-    }
     mtx_init(&mqtt->mutex, mtx_plain);
     mqtt->timer = tm_create(0, "mqtt_retry");
     return mqtt;
 }
-
-void mqtt_set_passwd(struct MqttInstance *mqtt, const char *address, 
-                    const char *username, const char *password) {
-    mqtt->address = (char *)mqtt + sizeof(struct MqttInstance);
-    strcpy(mqtt->address, address);
-    if (username != NULL && username[0] != '\0') {
-        mqtt->username = mqtt->address + strlen(address) + 1;
-        strcpy(mqtt->username, username);
-        if (password != NULL && password[0] != '\0') {
-            mqtt->password = mqtt->username + strlen(username) + 1;
-            strcpy(mqtt->password, password);
-        }
-    }
-}
-
 
 bool mqtt_is_connected(struct MqttInstance *mqtt) {
     return mqtt != NULL && mqtt->connected;
@@ -443,12 +403,7 @@ bool mqtt_is_connected(struct MqttInstance *mqtt) {
 void mqtt_delete(struct MqttInstance *mqtt) {
     if (mqtt != NULL) {
         tm_destroy(mqtt->timer);
-        while (mqtt->connected || mqtt->connecting) {
-            usleep(10000);
-        }
-        if (mqtt->client != NULL) {
-            MQTTAsync_destroy(&mqtt->client);
-        }
+        
         while (mqtt->topicList != NULL) {
             mqtt->topicList = TopicItem_delete(mqtt->topicList);
         }
@@ -457,12 +412,45 @@ void mqtt_delete(struct MqttInstance *mqtt) {
     }
 }
 
-int mqtt_start(struct MqttInstance *mqtt, MqttFinishCallback cb, void *context) {
+int mqtt_start(struct MqttInstance *mqtt, MqttFinishCallback cb, void *context, 
+                    char *address, char *username, char *password) {
     if (mqtt == NULL) {
         return ERR_MQTT_UNINITIALIZED;
     }
+
+    if ((NULL != address) && (address[0] != '\0')) {
+        strcpy(mqtt->address, address);
+    }
+
+    if ((NULL != username) && (username[0] != '\0')) {
+        strcpy(mqtt->username, username);
+    }
+
+    if ((NULL != password) && (password[0] != '\0')) {
+        strcpy(mqtt->password, password);
+    }
+
+    log_debug("create mqtt client, %s: address[%s], username[%s], password[%s]", 
+                __FUNCTION__, mqtt->address, mqtt->username, mqtt->password);
+
+    int rc = MQTTAsync_create(&mqtt->client, mqtt->address, instance.deviceName, MQTTCLIENT_PERSISTENCE_NONE, NULL);
+    if (rc != MQTTASYNC_SUCCESS) {
+        log_error("Failed to create client object: %d", rc);
+        free(mqtt);
+        return ERR_MQTT_UNINITIALIZED;
+    }
+
+    rc = MQTTAsync_setCallbacks(mqtt->client, mqtt, connlost, messageArrived, NULL);
+    if (rc != MQTTASYNC_SUCCESS) {
+        log_error("Failed to set callback: %d", rc);
+        free(mqtt);
+        return ERR_MQTT_UNINITIALIZED;
+    }
+
     mqtt->running         = true;
-    mqtt->connectCallback = cb;
+    if (NULL != cb) {
+        mqtt->connectCallback = cb;
+    }
     mqtt->connectContext  = context;
     if (do_mqtt_start(mqtt) != MQTTASYNC_SUCCESS) {
         increase_delay_time(mqtt);
@@ -485,6 +473,15 @@ int mqtt_stop(struct MqttInstance *mqtt) {
         if (rc != MQTTASYNC_SUCCESS) {
             log_error("Failed to start disconnect: %d", rc);
             return rc;
+        }
+
+        while (mqtt->connected || mqtt->connecting) {
+            usleep(10000);
+        }
+
+        if (mqtt->client != NULL) {
+            MQTTAsync_destroy(&mqtt->client);
+            mqtt->client = NULL;
         }
     }
     return ERR_SUCCESS;
@@ -602,7 +599,7 @@ int mqtt_publish_ex(struct MqttInstance *mqtt, const char *topic, const char *pa
             return 1;
         } else {
             queue_pending_msg_emplace_back(&mqtt->pendingMessages, strdup(topic), strdup(payload), ctx);
-            mqtt_start(mqtt, NULL, NULL);
+            mqtt_start(mqtt, NULL, NULL, NULL, NULL, NULL);
             return 1;
         }
     } else if (rc != MQTTASYNC_SUCCESS) {
