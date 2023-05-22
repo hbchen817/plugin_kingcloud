@@ -20,7 +20,7 @@ typedef struct {
 
 // 定义映射关系表
 FirmwareMapping firmwareMappings[] = {
-    {"REX_HA_1EP_WCD_3B137_DY_1.0.0[20221106].gbl", "rexense.dooya.curtain.dt82tn"},
+    {"DY8201", "rexense.dooya.curtain.dt82tn"},
     {"REX_HA_1EP_OFL_3P_LF_13P7_1RELAY[20211208].gbl", "rexense.laffey.switch1.d8"},
     {"REX_HA_2EP_OFL_3P_LF_13P7_2RELAY[20211208].gbl", "rexense.laffey.switch2.d8"},
     {"REX_HA_3EP_OFL_3P_LF_13P7_3RELAY[20211208].gbl", "rexense.laffey.switch3.d8"},
@@ -156,6 +156,13 @@ int handle_kc_command_down(const char *topic, const char *message, int length, v
         handle_service_stop_permit_join(topic, message, length, context);
         return ERR_SUCCESS;
     }
+
+    if (0 == strcmp("control.prop", control_type))
+    {
+        handle_service_property_set(topic, message, length, context);
+        return ERR_SUCCESS;
+    }
+    
 
     // 局域网扫描入网
     if ((0 == strcmp(NAME_KC_COMMON_CONTROL_TYPE, control_type)
@@ -744,14 +751,17 @@ int handle_service_property_set(const char *topic, const char *message, int leng
     if (iter != NULL && any_is_string(&iter->val0)) {
         productKey = iter->val0.u.sval;
     }
-    iter = map_any_find(params, NAME_DEV_DEVICE_NAME);
+    iter = map_any_find(params, "deviceId");
     if (iter != NULL && any_is_string(&iter->val0)) {
         deviceName = iter->val0.u.sval;
+        log_info("********************%s\n", deviceName);
     }
-    iter                       = map_any_find(params, NAME_COMMON_PROPERTY_NAME);
-    map_any_iterator *val_iter = map_any_find(params, NAME_COMMON_PROPERTY_VALUE);
+    iter                       = map_any_find(params, "code");
+    map_any_iterator *val_iter = map_any_find(params, "value");
     if (deviceName != NULL && iter != NULL && val_iter != NULL) {
+        log_info("********************1\n");
         if (any_is_valid_string(&iter->val0)) {
+            log_info("********************2\n");
             set_property(productKey, deviceName, iter->val0.u.sval, val_iter->val0);
         } else if (any_is_sequence(&iter->val0) && any_is_sequence(&val_iter->val0) && any_length(&iter->val0) == any_length(&val_iter->val0)) {
             for (int i = 0; i < any_length(&iter->val0); i++) {
