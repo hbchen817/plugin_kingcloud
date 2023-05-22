@@ -368,7 +368,10 @@ static int messageArrived(void *context, char *topicName, int topicLen, MQTTAsyn
             int rc = temp->cb(topicName, message->payload, message->payloadlen, temp->context);
             MQTTAsync_freeMessage(&message);
             MQTTAsync_free(topicName);
-            return rc;
+
+            // 这里返回true，因为不管处理成功还是失败，只需要结果上报即可
+            // 否则，这里会做无限重试，但是上面已经free掉message了
+            return 1;
         }
     }
     mtx_unlock(&mqtt->mutex);

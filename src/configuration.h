@@ -29,7 +29,7 @@
 #define NAME_FUNC_IOTA                                      "IOTA"
 #define NAME_KC_COMMON_VERSION                              "version"
 #define NAME_KC_COMMON_FLOW_DIRECTION                       "flowDirection"
-#define NAME_KC_COMMON_CONTROL_TYPE                         "controlType"
+#define NAME_KC_COMMON_CONTROL_TYPE                         "control.func"
 #define NAME_KC_COMMON_MESSAGE_TYPE                         "messageType"
 #define NAME_KC_COMMON_VENDOR                               "vendor"
 #define NAME_KC_COMMON_TIMESTAMP                            "timestamp"

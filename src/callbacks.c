@@ -63,12 +63,12 @@ int handle_kc_message_up(const char *topic, const char *message, int length, voi
 }
 
 int handle_kc_command_down(const char *topic, const char *message, int length, void *context) {
-    log_info("%s %s: %.*s", __FUNCTION__, topic, length, message);
+    log_info("[callbacks] %s receive new command %s: %.*s", __FUNCTION__, topic, length, message);
 
     // 解析json
     cJSON *root = cJSON_Parse(message);
     if (NULL == root) {
-        log_error("%s failed", __FUNCTION__);
+        log_error("[callbacks] parse json %s failed", message);
         cJSON_Delete(root);
         return ERR_INVALID_ARGUMENT;
     }
@@ -76,42 +76,33 @@ int handle_kc_command_down(const char *topic, const char *message, int length, v
     // 获取control type && code
     cJSON *header = cJSON_GetObjectItem(root, "controlType");
     cJSON *data = cJSON_GetObjectItem(root, "data");
-    char controlType[16];
+    char control_type[16];
     char code[32];
-    memset(controlType, 0, sizeof(controlType));
+    memset(control_type, 0, sizeof(control_type));
     memset(code, 0, sizeof(code));
     cJSON *data0 = cJSON_GetArrayItem(data, 0);
     cJSON *codeStr = cJSON_GetObjectItem(data0, "code");
-    strcpy(controlType, header->valuestring);
+    strcpy(control_type, header->valuestring);
     strcpy(code, codeStr->valuestring);
     cJSON_Delete(root);
 
     // 时间关系，这里直接根据金山云协议报文中的内容进行处理哈
     // 可能会是一个巨长的if else
-    if ((0 == strcmp(NAME_KC_COMMON_CONTROL_TYPE, controlType)
+    if ((0 == strcmp("control.func", control_type)
              && (0 == strcmp("start_zigbee_join", code)))) {
-        // 开启组网
-
-        // TODO: 网关组网
-
-        // 释放
-
+        handle_service_start_permit_join(topic, message, length, context);
         return ERR_SUCCESS;
     }
 
     // 停止组网
-    if ((0 == strcmp(NAME_KC_COMMON_CONTROL_TYPE, controlType)
+    if ((0 == strcmp("control.func", control_type)
              && (0 == strcmp("stop_zigbee_join", code)))) {
-
-        // TODO: 网关组网
-
-        // 释放
-
+        handle_service_stop_permit_join(topic, message, length, context);
         return ERR_SUCCESS;
     }
 
     // 局域网扫描入网
-    if ((0 == strcmp(NAME_KC_COMMON_CONTROL_TYPE, controlType)
+    if ((0 == strcmp(NAME_KC_COMMON_CONTROL_TYPE, control_type)
              && (0 == strcmp("network_scan_join", code)))) {
         // TODO: 网关组网
 
@@ -872,6 +863,7 @@ int handle_service_reply(int id, int code, void *data) {
     if (data == NULL) {
         return ERR_INVALID_ARGUMENT;
     }
+
     int      ret    = ERR_SUCCESS;
     map_any *params = data;
     if (code != 0) {
