@@ -120,7 +120,7 @@ int rex_notify(RexMessage_t *msg) {
             log_info("scene %s unknown operation(%d) %d", msg->u.sceneTriggerMsg.sceneId, msg->u.sceneTriggerMsg.action, msg->u.sceneTriggerMsg.status);
             break;
         case MSG_TYPE_NODE_ADDED: // 新节点入网
-            handle_sub_register(msg->u.includedMsg.productId, msg->u.includedMsg.mac);
+            handle_sub_register(msg->u.includedMsg.productId, msg->u.includedMsg.mac, msg->u.includedMsg.modelId);
             break;
         case MSG_TYPE_NODE_REMOVED: // 节点离网
             iter = map_device_find(instance.devices, msg->u.excludedMsg.mac);

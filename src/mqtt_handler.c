@@ -58,7 +58,7 @@ void init_topics(struct DeviceList *list) {
         struct DeviceList *list = &instance.devList;
         for (int i = 1; i < list->count; i++) {
             switch (list->devices[i].status) {
-            case CONNECT_STATE_LEAVING:
+            case CONNECT_STATE_LEAVENETING:
                 log_info("%s is leaving", list->devices[i].mac);
                 break;
             case CONNECT_STATE_DELETING: {

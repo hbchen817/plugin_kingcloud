@@ -162,7 +162,7 @@ int fmt_RexMessage(char *buf, int len, const RexMessage_t *v) {
         case CONNECT_STATE_OFFLINE:
             ptr += snprintf(buf + ptr, len - ptr, "\"offline\"}");
             break;
-        case CONNECT_STATE_LEAVING:
+        case CONNECT_STATE_LEAVENETING:
             ptr += snprintf(buf + ptr, len - ptr, "\"leaving\"}");
             break;
         case CONNECT_STATE_DELETING:

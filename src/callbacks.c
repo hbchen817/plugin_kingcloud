@@ -12,6 +12,62 @@
 #include <string.h>
 #include <time.h>
 
+// 定义固件版本和模型编码的映射关系结构体
+typedef struct {
+    char firmwareVersion[50];
+    char modelCode[50];
+} FirmwareMapping;
+
+// 定义映射关系表
+FirmwareMapping firmwareMappings[] = {
+    {"REX_HA_1EP_WCD_3B137_DY_1.0.0[20221106].gbl", "rexense.dooya.curtain.dt82tn"},
+    {"REX_HA_1EP_OFL_3P_LF_13P7_1RELAY[20211208].gbl", "rexense.laffey.switch1.d8"},
+    {"REX_HA_2EP_OFL_3P_LF_13P7_2RELAY[20211208].gbl", "rexense.laffey.switch2.d8"},
+    {"REX_HA_3EP_OFL_3P_LF_13P7_3RELAY[20211208].gbl", "rexense.laffey.switch3.d8"},
+    {"REX_HA_2EP_WCD_3P_LF_13P7_4RELAY[20211025].gbl", "rexense.laffey.switch2.curtain.d8"},
+    {"REX_HA_4EP_SSS_3P_LF_13P7[20200811].gbl", "rexense.laffey.switch4.scene.d8"},
+    {"REX_HA_1EP_MP0_3P_LF_13P7[20210512].gbl", "rexense.laffey.power.socket.d8"},
+    {"REX_HA_3EP_TFH_3P137_LF_7IN1[20210928].gbl", "rexense.laffey.aircondition.d8"},
+    {"REX_HA_1EP_OFL_3CSP_LF_1RELAY[20220804]", "rexense.laffey.switch1.d8b"},
+    {"REX_HA_2EP_OFL_3CSP_LF_2RELAY[20220804]", "rexense.laffey.switch2.d8b"},
+    {"REX_HA_3EP_OFL_3CSP_LF_3RELAY[20220804]", "rexense.laffey.switch3.d8b"},
+    {"REX_HA_2EP_WCD_3CSP_LF_4RELAY[20220406]", "rexense.laffey.switch2.curtain.d8b"},
+    {"REX_HA_4EP_SSS_3CSP_LF[20220627]", "rexense.laffey.switch4.scene.d8b"},
+    {"REX_HA_1EP_MPO_3CSP_LF[20220406]", "rexense.laffey.power.socket.d8b"},
+    {"REX_HA_3EP_TFH_3CSP_LF_7IN1[20220414]", "rexense.laffey.aircondition.d8b"},
+    {"REX_HA_1EP_OFL_3CSP_LF_1RELAY[20220804]", "rexense.laffey.switch1.d9"},
+    {"REX_HA_2EP_OFL_3CSP_LF_2RELAY[20220804]", "rexense.laffey.switch2.d9"},
+    {"REX_HA_3EP_OFL_3CSP_LF_3RELAY[20220804]", "rexense.laffey.switch3.d9"},
+    {"REX_HA_2EP_WCD_3CSP_LF_4RELAY[20220406]", "rexense.laffey.switch2.curtain.d9"},
+    {"REX_HA_4EP_SSS_3CSP_LF[20220627]", "rexense.laffey.switch4.scene.d9"},
+    {"REX_HA_1EP_MPO_3CSP_LF[20220406]", "rexense.laffey.power.socket.d9"},
+    {"REX_HA_3EP_TFH_3CSP_LF_7IN1[20220414]", "rexense.laffey.aircondition.d9"},
+    {"REX_HA_1EP_GS_3KT_MLK[20211213].bin", "rexense.mirsz.gas.sensor.jtga100zb"},
+    {"REX_HA_1EP_SD_13P7_MLK[20201127].gbl", "rexense.mirsz.smoke.sensor.mirsm100"},
+    {"REX_HA_1EP_PS_13P7_MLK[20210602].gbl", "rexense.mirsz.motion.sensor.mirir100"},
+    {"REX_HA_1EP_DS_13P7_MLK[20210615].gbl", "rexense.mirsz.magnet.sensor.mirmc100"},
+    {"REX_HA_1EP_WS_13P7_MLK[20201112].gbl", "rexense.mirsz.wleak.sensor.mirwa100"},
+    {"REX_HA_1EP_EB_13P7_MLK[20210601].gbl", "rexense.mirsz.alarm.button.mirso100"},
+    {"REX_HA_1EP_PS_13P7_MLK_XW_V2[20210802].gbl", "rexense.mirsz.humanbody.sensor.mirir200d"},
+    {"REX_HA_1EP_AVA_13P7_MLK[20210802].gbl", "rexense.mirsz.soundlight.alarm.mirsr100"}
+};
+
+// 获取映射关系条目数量
+int getFirmwareMappingCount() {
+    return sizeof(firmwareMappings) / sizeof(FirmwareMapping);
+}
+
+// 根据固件版本查找对应的模型编码
+const char* findModelCode(const char* firmwareVersion) {
+    int mappingCount = getFirmwareMappingCount();
+    for (int i = 0; i < mappingCount; ++i) {
+        if (strcmp(firmwareMappings[i].firmwareVersion, firmwareVersion) == 0) {
+            return firmwareMappings[i].modelCode;
+        }
+    }
+    return NULL; // 如果找不到对应的模型编码，返回NULL
+}
+
 static int common_mqtt_publish(const char *topic_pattern_str, any_t payload_pattern, const map_any *context) {
     any_t topic_pattern = {.type = kUnknown};
     any_set_const_string(&topic_pattern, topic_pattern_str);
@@ -131,7 +187,8 @@ int handle_register_gateway_mqtt_reply(const char *topic, const char *message, i
 }
 
 // 2.1.2 子设备动态注册
-int handle_sub_register(const char *productKey, const char *deviceName) {
+int handle_sub_register(const char *productKey, const char *deviceName, const char *modelId) {
+    log_info("%s %s: %s", __FUNCTION__, productKey, deviceName);
     map_device_iterator *iter = map_device_first(instance.devices);
     while (iter != NULL && strcmp(iter->val0->productId, productKey) != 0) {
         iter = map_device_next(iter);
@@ -160,6 +217,31 @@ int handle_sub_register(const char *productKey, const char *deviceName) {
     map_any *context = map_any_create();
     map_any_insert(context, NAME_DEV_PRODUCT_KEY, any_from_const_string(productKey));
     map_any_insert(context, NAME_DEV_DEVICE_NAME, any_from_const_string(productKey));
+    map_any_insert(context, "version", any_from_const_string("2.0"));
+    map_any_insert(context, "flowDirection", any_from_const_string("1"));
+    map_any_insert(context, "controlType", any_from_const_string(""));
+    map_any_insert(context, "messageType", any_from_const_string("bind"));
+    char timestamp[64];
+    memset(timestamp, 0, sizeof(timestamp));
+    get_time_str(timestamp);
+    map_any_insert(context, "timestamp", any_from_const_string(timestamp));
+    map_any_insert(context, "parentDeviceId", any_from_const_string(instance.macCOO));
+    map_any_insert(context, "deviceId", any_from_const_string(deviceName));
+    map_any_insert(context, "name", any_from_const_string(deviceName));
+    map_any_insert(context, "code", any_from_const_string(""));
+    map_any_insert(context, "value", any_from_const_string(""));
+
+    log_info("################## model id: %s\n", modelId);
+    char *hexModelId = findModelCode(modelId);
+    if (NULL != hexModelId) {
+        map_any_insert(context, "model", any_from_const_string(hexModelId));
+    }
+
+    char buf[2048] = {0};
+    any_to_str_buffer(buf, &config->req_payload);
+    char buf1[2048] = {0};
+    any_to_str_buffer(buf1, &config->res_payload);
+    log_error("!!!!!!!!!!!!!!topic: %s, req: %s, rsp: %s\n", config->req_topic, buf, buf1);
     int ret = common_mqtt_publish(config->req_topic, config->req_payload, context);
     map_any_destroy_ex(context);
     if (ret == ERR_SUCCESS && config->res_topic == NULL) {
@@ -208,6 +290,7 @@ int handle_sub_register_reply(const char *topic, const char *message, int length
 
 // 2.2.1 子设备入网
 int handle_topo_join(const char *productKey, const char *deviceName, const char *deviceSecret) {
+    log_info("%s %s %s", __FUNCTION__, productKey, deviceName);
     if (!g_config.topo_join.enable || g_config.topo_join.req_topic == NULL) {
         handle_sub_login(productKey, deviceName);
         return ERR_SUCCESS;
@@ -215,6 +298,21 @@ int handle_topo_join(const char *productKey, const char *deviceName, const char 
     map_any *context = map_any_create();
     map_any_insert(context, NAME_DEV_PRODUCT_KEY, any_from_const_string(productKey));
     map_any_insert(context, NAME_DEV_DEVICE_NAME, any_from_const_string(deviceName));
+
+    map_any_insert(context, "version", any_from_const_string("2.0"));
+    map_any_insert(context, "flowDirection", any_from_const_string("1"));
+    map_any_insert(context, "controlType", any_from_const_string(""));
+    map_any_insert(context, "messageType", any_from_const_string("bind"));
+    char timestamp[64];
+    memset(timestamp, 0, sizeof(timestamp));
+    get_time_str(timestamp);
+    map_any_insert(context, "timestamp", any_from_const_string(timestamp));
+    map_any_insert(context, "parentDeviceId", any_from_const_string(""));
+    map_any_insert(context, "deviceId", any_from_const_string(deviceName));
+    map_any_insert(context, "name", any_from_const_string(deviceName));
+    map_any_insert(context, "code", any_from_const_string(""));
+    map_any_insert(context, "value", any_from_const_string(""));
+
     config_func_t *config = &g_config.topo_join;
     int            ret    = common_mqtt_publish(config->req_topic, config->req_payload, context);
     map_any_destroy_ex(context);
@@ -1019,7 +1117,7 @@ int handle_service_start_permit_join(const char *topic, const char *message, int
                 } else {
                     memcpy(cmd.u.pairCommand.installCode, iter->val0.u.sval, sizeof(cmd.u.pairCommand.installCode));
                 }
-                cmd.u.pairCommand.type = PERMIT_TYPE_INSTALL_CODE;
+                //cmd.u.pairCommand.type = PERMIT_TYPE_INSTALL_CODE;
             }
         } else if (strcmp(iter->key, "mac") == 0) {
             if (any_is_valid_string(&iter->val0)) {
@@ -1030,7 +1128,7 @@ int handle_service_start_permit_join(const char *topic, const char *message, int
                     cmd.u.pairCommand.macNum = 1;
                     strncpy(cmd.u.pairCommand.macList[0].mac, iter->val0.u.sval, MAC_LEN);
                     if (cmd.u.pairCommand.type == PERMIT_TYPE_ALL) {
-                        cmd.u.pairCommand.type = PERMIT_TYPE_WHITE_LIST;
+                        // cmd.u.pairCommand.type = PERMIT_TYPE_WHITE_LIST;
                     }
                 } else {
                     log_error("%s malloc %d bytes failed", __FUNCTION__, sizeof(RexMacInfo_t));
@@ -1046,7 +1144,7 @@ int handle_service_start_permit_join(const char *topic, const char *message, int
                         }
                     }
                     if (cmd.u.pairCommand.type == PERMIT_TYPE_ALL) {
-                        cmd.u.pairCommand.type = PERMIT_TYPE_WHITE_LIST;
+                        // cmd.u.pairCommand.type = PERMIT_TYPE_WHITE_LIST;
                     }
                 } else {
                     log_error("%s malloc %d bytes failed", __FUNCTION__, any_length(&iter->val0) * sizeof(RexMacInfo_t));

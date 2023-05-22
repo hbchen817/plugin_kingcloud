@@ -17,7 +17,7 @@ int handle_kc_ota_ack(const char *topic, const char *message, int length, void *
 int handle_register_gateway_mqtt_reply(const char *topic, const char *message, int length, void *context);
 
 // 2.1.2 子设备动态注册
-int handle_sub_register(const char *productKey, const char *deviceName);
+int handle_sub_register(const char *productKey, const char *deviceName, const char *modelId);
 int handle_sub_register_reply(const char *topic, const char *message, int length, void *context);
 
 // 2.2.1 子设备入网

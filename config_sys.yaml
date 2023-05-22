@@ -42,6 +42,27 @@ functionality:
       match: ["id"]
       success:
         CODE: 0
+    dev_register:
+      request:
+        topic: ${gwVC}/${gwMD}/${gwDN}/message/up
+        payload:
+          version: ${version}
+          flowDirection: ${flowDirection}
+          controlType: ${controlType}
+          messageType: ${messageType}
+          vendor: ${gwVC}
+          timestamp: ${timestamp}
+          sequence: ${IOTA}
+          data:
+            - model: ${model}
+              parentDeviceId: ${parentDeviceId}
+              deviceId: ${deviceId}
+              room: ${room}
+              name: ${name}
+              code: ${code}
+      match: ["id"]
+      success:
+        CODE: 0
     gw_ota:
       request:
         topic: ${gwVC}/${gwMD}/${gwDN}/ota/ack
